@@ -96,7 +96,7 @@ PioCare/
 | 0.2 ✓ | Jurnal + copii de siguranță + anulare (fundația pentru orice schimbare). Vezi mai jos. |
 | 0.3 ✓ | Registru curat: dezinstalări orfane, porniri automate moarte, App Paths, SharedDLLs; ștergere prin jurnal. Testat în VM: scanare → curățare → anulare. |
 | 0.4 ✓ | Servicii: hartă cu dependențe în ambele sensuri, profiluri Acasă/Birou/Gaming, „ce folosești”, oprire doar fără dependenți activi, listă de servicii vitale neatinse. Testat în VM: aplicare 31 schimbări → anulare. |
-| 0.5 | Firewall: politică de siguranță, export/import, monitorizare programe noi. |
+| 0.5 ✓ | Firewall: 10 porți de intrare riscante + 12 unelte Windows abuzate de viruși blocate (doar reguli „PioCare-*”), export înainte, programe noi care ies pe internet + blocare. Testat în VM: 20 reguli aplicate, navigarea merge, anulare exactă (430→410). |
 | 0.6 | Întreținere generală și curățare. |
 | 0.7 | Pachete de reguli semnate și actualizare separată. |
 | 1.0 | Installer, manual, prezentare. |
