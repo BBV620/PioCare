@@ -9,7 +9,6 @@ use crate::actions::{ActionSpec, StartType};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-const RULES: &str = include_str!("../../rules/services.json");
 
 /// Servicii vitale: PioCare nu le schimbă niciodată, orice ar spune un pachet de reguli.
 pub const CRITICAL: &[&str] = &[
@@ -49,7 +48,7 @@ struct Rules {
 }
 
 fn rules() -> Result<Rules, String> {
-    let r: Rules = serde_json::from_str(RULES).map_err(|e| format!("rules/services.json: {e}"))?;
+    let r: Rules = serde_json::from_str(&crate::rules::text("services")).map_err(|e| format!("rules/services.json: {e}"))?;
     if r.schema_version > crate::rules::SUPPORTED_SCHEMA {
         return Err("pachetul de reguli pentru servicii cere o versiune mai nouă a aplicației".into());
     }

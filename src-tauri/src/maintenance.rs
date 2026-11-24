@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-const RULES: &str = include_str!("../../rules/maintenance.json");
 
 #[derive(Deserialize, Clone)]
 struct Item {
@@ -46,7 +45,7 @@ struct Rules {
 }
 
 fn rules() -> Result<Rules, String> {
-    let r: Rules = serde_json::from_str(RULES).map_err(|e| format!("rules/maintenance.json: {e}"))?;
+    let r: Rules = serde_json::from_str(&crate::rules::text("maintenance")).map_err(|e| format!("rules/maintenance.json: {e}"))?;
     if r.schema_version > crate::rules::SUPPORTED_SCHEMA {
         return Err("pachetul de reguli pentru întreținere cere o versiune mai nouă a aplicației".into());
     }

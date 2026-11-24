@@ -102,5 +102,5 @@ PioCare/
 | 0.8 ✓ | „Ce este?” pentru fiecare serviciu, proces, regulă și program din listele PioCare: ce face, dacă e sigur de oprit, ce se strică. Explicațiile stau în pachetele de reguli (RO/EN), deci se actualizează odată cu ele. |
 | 0.9 ✓ | Dezinstalator încorporat: lista programelor → dezinstalatorul oficial al programului → scanare imediată a resturilor (registru, foldere, scurtături, porniri automate, servicii) → ștergere doar cu copie și anulare → starea sistemului după. Componentele comune/sistem nu se ating. |
 | 0.10 ✓ | Programe la pornire: tot ce pornește odată cu Windows (chei Run, foldere Startup, sarcini programate la autentificare, starea StartupApproved), cu producător, impact și „Ce este?”; dezactivare sau amânare (nu ștergere) prin jurnal, cu anulare. |
-| 0.11 | Pachete de reguli semnate și actualizare separată. |
+| 0.11 ✓ | Pachete de reguli semnate (ECDSA P-256) și actualizare separată: `%ProgramData%\PioCareules\<nume>.json` + `.sig`, folosite doar cu semnătură validă, format înțeles și versiune mai nouă; semnare cu `tools/semneaza-reguli.cjs` (cheia privată în afara depozitului). |
 | 1.0 | Instalator semnat, manual, prezentare. |

@@ -38,3 +38,6 @@ logs/
 *.p12
 *.key
 .claude/settings.local.json
+
+# Pachete de reguli semnate (se generează cu tools/semneaza-reguli.cjs)
+dist-reguli/

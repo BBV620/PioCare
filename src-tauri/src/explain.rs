@@ -6,7 +6,6 @@ use crate::i18n::Text;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-const RULES: &str = include_str!("../../rules/explain.json");
 
 #[derive(Deserialize, Clone)]
 struct Entry {
@@ -24,7 +23,7 @@ struct Base {
 }
 
 fn base() -> Result<Base, String> {
-    let b: Base = serde_json::from_str(RULES).map_err(|e| format!("rules/explain.json: {e}"))?;
+    let b: Base = serde_json::from_str(&crate::rules::text("explain")).map_err(|e| format!("rules/explain.json: {e}"))?;
     if b.schema_version > crate::rules::SUPPORTED_SCHEMA {
         return Err("explain.json: schema".into());
     }

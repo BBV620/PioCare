@@ -1,6 +1,6 @@
 [package]
 name = "piocare"
-version = "0.10.0"
+version = "0.11.0"
 description = "PioCare - Windows maintenance dashboard"
 authors = ["Piogrup"]
 edition = "2021"
@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+p256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

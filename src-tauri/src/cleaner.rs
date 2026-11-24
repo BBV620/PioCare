@@ -9,7 +9,6 @@ use crate::actions::{ActionSpec, Root};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-const RULES: &str = include_str!("../../rules/registry.json");
 pub const RULES_ID: &str = "clean";
 
 #[derive(Deserialize)]
@@ -31,7 +30,7 @@ struct Rules {
 }
 
 fn rules() -> Result<Rules, String> {
-    let r: Rules = serde_json::from_str(RULES).map_err(|e| format!("rules/registry.json: {e}"))?;
+    let r: Rules = serde_json::from_str(&crate::rules::text("registry")).map_err(|e| format!("rules/registry.json: {e}"))?;
     if r.schema_version > crate::rules::SUPPORTED_SCHEMA {
         return Err("pachetul de reguli pentru registru cere o versiune mai nouă a aplicației".into());
     }

@@ -160,6 +160,15 @@ async function loadOverview() {
     const r = await invoke("rules_info");
     $("rules").textContent = `v${r.version}`;
     $("rulessub").textContent = t("panou.rulesSub", { n: r.rule_count, src: r.source, s: r.schema_version, ss: r.supported_schema });
+    $("packs").innerHTML = `<div class="map">${r.packs
+      .map((p) => {
+        const cls = { valid: "ok", invalid: "bad", broken: "bad", schema_too_new: "warn", older: "muted", none: "muted" }[p.update_state] || "";
+        return `<div class="svc"><div><b>${esc(t(`rp.name.${p.name}`))}</b> <span class="sub">v${esc(p.active_version)}</span></div>
+          <div class="sub">${esc(p.source === "updated" ? t("rp.updated") : t("rp.builtin", { v: p.builtin_version }))}</div>
+          ${p.update_state !== "none" ? `<div class="sub"><span class="badge ${cls}">${esc(t(`rp.state.${p.update_state}`, { v: p.update_version || "" }))}</span></div>` : ""}
+        </div>`;
+      })
+      .join("")}</div>`;
 
     const ops = await invoke("journal_list");
     const b = ops.find((x) => x.kind === "backup" && x.status === "backup_done");
@@ -772,6 +781,7 @@ $("btn-un-clean").addEventListener("click", async () => {
   }
 });
 
+$("btn-rules-folder").addEventListener("click", () => invoke("open_rules_folder").catch(() => {}));
 $("refresh").addEventListener("click", loadOverview);
 
 // ---------- pornire ----------

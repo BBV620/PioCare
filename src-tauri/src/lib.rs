@@ -341,6 +341,14 @@ fn enable_protection() -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Deschide folderul în care se pun pachetele de reguli actualizate (îl creează dacă lipsește).
+#[tauri::command]
+fn open_rules_folder() -> Result<(), String> {
+    let d = rules::updates_dir();
+    std::fs::create_dir_all(&d).map_err(|e| e.to_string())?;
+    std::process::Command::new("explorer.exe").arg(d).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn open_folder(path: String) -> Result<(), String> {
     let root = journal::default_root()?;
@@ -387,6 +395,7 @@ pub fn run() {
             services_analyze,
             services_apply,
             explain,
+            open_rules_folder,
             startup_list,
             startup_set,
             programs_list,
