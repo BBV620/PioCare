@@ -1,5 +1,5 @@
 ﻿# Creează mașina virtuală de test PioCare-Test în Hyper-V.
-# Cere: utilizatorul curent în grupul „Hyper-V Administrators” și o imagine ISO Windows.
+# Cere: utilizatorul curent în grupul Hyper-V Administrators și o imagine ISO Windows.
 # Folosire: powershell -ExecutionPolicy Bypass -File creeaza-vm.ps1 -Iso "E:\ISO\Win10.iso"  (adaugă -Tpm doar pentru Windows 11)
 param(
   [Parameter(Mandatory = $true)][string]$Iso,
@@ -33,4 +33,4 @@ Set-VMFirmware -VMName $Name -FirstBootDevice $dvd -EnableSecureBoot On -SecureB
 Enable-VMIntegrationService -VMName $Name -Name "Guest Service Interface"
 
 "Gata: $Name ($Cpu procesoare, până la $MemoryGB GB RAM, disc $DiskGB GB în $Folder)."
-"Pornește-o din Hyper-V Manager (Connect -> Start) și instalează Windows; la cheie de produs alege „I don't have a product key”."
+"Pornește-o din Hyper-V Manager (Connect -> Start) și instalează Windows; la cheie de produs alege: I don't have a product key."
