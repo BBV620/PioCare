@@ -1,6 +1,6 @@
 [package]
 name = "piocare"
-version = "1.0.1"
+version = "1.0.2"
 description = "PioCare - Windows maintenance dashboard"
 authors = ["Piogrup"]
 edition = "2021"

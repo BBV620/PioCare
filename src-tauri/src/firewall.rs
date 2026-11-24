@@ -73,49 +73,66 @@ fn ps(script: &str, env: &[(&str, &str)]) -> Result<String, String> {
     run_hidden_env("powershell.exe", &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &full], env)
 }
 
-/// Valorile textului sunt transmise prin variabile de mediu, nu lipite în script (fără injecții).
+/// Rulează `netsh advfirewall firewall …` (unealta oficială, rapidă: sub o zecime de secundă).
+/// Argumentele sunt deja validate (fără ghilimele), deci pot fi puse între ghilimele în siguranță.
+#[cfg(windows)]
+fn netsh(args: &[String]) -> Result<String, String> {
+    use std::os::windows::process::CommandExt;
+    let mut cmd = std::process::Command::new("netsh.exe");
+    cmd.args(["advfirewall", "firewall"]);
+    for a in args {
+        cmd.raw_arg(a);
+    }
+    cmd.creation_flags(0x0800_0000);
+    let out = cmd.output().map_err(|e| format!("netsh: {e}"))?;
+    let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if out.status.success() { Ok(text) } else { Err(format!("netsh: {text}")) }
+}
+
+/// Regula se creează cu `netsh`: numele „PioCare-…”, descrierea „PioCare: …”.
+#[cfg(windows)]
 pub fn add_rule(r: &FwRule) -> Result<(), String> {
     r.validate()?;
     if rule_exists(&r.name) {
         return Ok(());
     }
-    let mut script = String::from(
-        "$p=@{Name=$env:PC_NAME; DisplayName=('PioCare: '+$env:PC_DISPLAY); Group='PioCare'; Direction=$env:PC_DIR; Action='Block'; Enabled='True'; Profile=($env:PC_PROF -split ',')}; ",
-    );
-    if r.protocol.is_some() {
-        script.push_str("$p.Protocol=$env:PC_PROTO; ");
+    let profile = if r.profiles.eq_ignore_ascii_case("any") { "any".to_string() } else { r.profiles.to_lowercase() };
+    let mut a = vec![
+        "add".to_string(),
+        "rule".to_string(),
+        format!("name=\"{}\"", r.name),
+        format!("dir={}", r.direction),
+        "action=block".to_string(),
+        "enable=yes".to_string(),
+        format!("profile={profile}"),
+        format!("description=\"PioCare: {}\"", r.display),
+    ];
+    if let Some(p) = &r.protocol {
+        a.push(format!("protocol={p}"));
     }
-    if r.local_ports.is_some() {
-        script.push_str("$p.LocalPort=($env:PC_PORTS -split ','); ");
+    if let Some(lp) = &r.local_ports {
+        a.push(format!("localport={lp}"));
     }
-    if r.program.is_some() {
-        script.push_str("$p.Program=$env:PC_PROG; ");
+    if let Some(prog) = &r.program {
+        a.push(format!("program=\"{prog}\""));
     }
-    script.push_str("New-NetFirewallRule @p | Out-Null");
-    let dir = if r.direction == "in" { "Inbound" } else { "Outbound" };
-    ps(
-        &script,
-        &[
-            ("PC_NAME", &r.name),
-            ("PC_DISPLAY", &r.display),
-            ("PC_DIR", dir),
-            ("PC_PROF", &r.profiles),
-            ("PC_PROTO", r.protocol.as_deref().unwrap_or("")),
-            ("PC_PORTS", r.local_ports.as_deref().unwrap_or("")),
-            ("PC_PROG", r.program.as_deref().unwrap_or("")),
-        ],
-    )?;
+    netsh(&a)?;
     if rule_exists(&r.name) { Ok(()) } else { Err(crate::i18n::t(&format!("regula {} nu a apărut în firewall", r.name), &format!("rule {} did not appear in the firewall", r.name))) }
 }
 
 pub fn remove_rule(name: &str) -> Result<(), String> {
-    if !name.starts_with("PioCare-") {
+    if !name.starts_with("PioCare-") || name.contains('"') {
         return Err(crate::i18n::t("PioCare scoate doar regulile create de el", "PioCare only removes its own rules"));
     }
     if !rule_exists(name) {
         return Ok(());
     }
-    ps("Remove-NetFirewallRule -Name $env:PC_NAME", &[("PC_NAME", name)])?;
+    if rule_ids().contains(name) {
+        // Regulă creată de versiunile 1.0.0–1.0.1 (cu PowerShell): identificatorul ei este chiar numele.
+        ps("Remove-NetFirewallRule -Name $env:PC_NAME", &[("PC_NAME", name)])?;
+    } else {
+        netsh(&["delete".into(), "rule".into(), format!("name=\"{name}\"")])?;
+    }
     Ok(())
 }
 
@@ -166,12 +183,40 @@ pub fn read_profile(profile: &str) -> Result<ProfileState, String> {
 }
 
 #[cfg(windows)]
-fn rule_names() -> HashSet<String> {
+fn rules_raw() -> Vec<(String, String)> {
     use winreg::enums::HKEY_LOCAL_MACHINE;
     winreg::RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey(format!("{POLICY}\\FirewallRules"))
-        .map(|k| k.enum_values().flatten().map(|(n, _)| n).collect())
+        .map(|k| {
+            k.enum_values()
+                .flatten()
+                .map(|(id, _)| {
+                    let data: String = k.get_value(&id).unwrap_or_default();
+                    (id, data)
+                })
+                .collect()
+        })
         .unwrap_or_default()
+}
+
+/// Identificatorii regulilor (numele valorilor din registru).
+#[cfg(windows)]
+fn rule_ids() -> HashSet<String> {
+    rules_raw().into_iter().map(|(id, _)| id).collect()
+}
+
+/// Identificatorii plus numele („Name=…”) regulilor: cele create cu netsh au un identificator {GUID}
+/// și numele în date; cele create cu PowerShell au identificatorul egal cu numele.
+#[cfg(windows)]
+fn rule_names() -> HashSet<String> {
+    let mut s = HashSet::new();
+    for (id, data) in rules_raw() {
+        if let Some(n) = data.split('|').find_map(|f| f.strip_prefix("Name=")) {
+            s.insert(n.to_string());
+        }
+        s.insert(id);
+    }
+    s
 }
 
 #[cfg(windows)]
@@ -307,7 +352,7 @@ pub fn status(uses: &[String]) -> Result<FwStatus, String> {
         rules_version: r.version,
         features: r.features.iter().map(|(k, v)| (k.clone(), v.get())).collect(),
         profiles,
-        total_rules: names.len(),
+        total_rules: rule_ids().len(),
         piocare_rules,
         proposals,
     })
