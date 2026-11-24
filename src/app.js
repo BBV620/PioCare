@@ -21,6 +21,7 @@ function show(page) {
   document.querySelectorAll(".page").forEach((p) => p.classList.toggle("hidden", p.id !== `page-${page}`));
   document.querySelectorAll("nav a[data-page]").forEach((a) => a.classList.toggle("active", a.dataset.page === page));
   if (page === "jurnal") loadJournal();
+  if (page === "servicii") loadServicesPage();
 }
 document.querySelectorAll("nav a").forEach((a) =>
   a.addEventListener("click", (e) => {
@@ -218,6 +219,113 @@ $("btn-clean").addEventListener("click", async () => {
     regStatus(String(e), "bad");
     $("btn-scan").disabled = false;
     updateCleanButton();
+  }
+});
+
+// ---------- servicii ----------
+const START = { auto: "automat", delayed: "automat (întârziat)", manual: "manual", disabled: "oprit", boot: "boot", system: "sistem", "?": "?" };
+const RISK = { low: ["risc mic", "ok"], medium: ["risc mediu", "warn"] };
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let svcMap = [];
+
+function svcStatus(text, kind = "") {
+  const s = $("svc-status");
+  s.textContent = text;
+  s.className = `status ${kind}`;
+  if (!text) s.classList.add("hidden");
+}
+const currentProfile = () => document.querySelector("input[name=profile]:checked").value;
+const currentUses = () => [...document.querySelectorAll("#features input:checked")].map((c) => c.value);
+
+function updateApply() {
+  const n = document.querySelectorAll("#svc-proposals input:checked").length;
+  $("btn-svc-apply").disabled = n === 0;
+  $("btn-svc-apply").textContent = n ? `Aplică selectate (${n})` : "Aplică selectate";
+}
+
+async function analyzeServices() {
+  store.set("piocare.profile", currentProfile());
+  if ($("features").children.length) store.set("piocare.uses", currentUses());
+  svcStatus("Se analizează serviciile…", "warn");
+  try {
+    const a = await invoke("services_analyze", { profile: currentProfile(), uses: currentUses() });
+    if (!$("features").children.length) {
+      const saved = store.get("piocare.uses", []);
+      $("features").innerHTML = Object.entries(a.features)
+        .map(([k, v]) => `<label><input type="checkbox" value="${esc(k)}" ${saved.includes(k) ? "checked" : ""}> ${esc(v)}</label>`)
+        .join("");
+      if (saved.length) return analyzeServices();
+    }
+    svcStatus(`${a.total_services} servicii, ${a.running_services} pornite acum · ${a.proposals.length} propuneri · reguli v${a.rules_version}`, a.proposals.length ? "warn" : "ok");
+    $("svc-proposals").innerHTML = a.proposals.length
+      ? `<div class="op"><ul class="finds">${a.proposals
+          .map((p) => {
+            const [rl, rc] = RISK[p.risk] || [p.risk, ""];
+            return `<li><label><input type="checkbox" data-svc="${esc(p.service)}" ${p.risk === "low" ? "checked" : ""}>
+              <span><b>${esc(p.display)}</b> <span class="badge ${rc}">${rl}</span>${p.running ? ' <span class="tag">pornit acum</span>' : ""}
+              <div class="sub">${esc(START[p.current] || p.current)} → <b>${esc(START[p.proposed] || p.proposed)}</b> · ${esc(p.service)}</div>
+              <div class="sub">${esc(p.why)}</div>
+              ${p.note ? `<div class="sub warnline">${esc(p.note)}</div>` : ""}</span></label></li>`;
+          })
+          .join("")}</ul></div>`
+      : `<p class="empty">Nimic de propus pentru acest profil. Serviciile sunt deja reglate.</p>`;
+    updateApply();
+  } catch (e) {
+    svcStatus(String(e), "bad");
+  }
+}
+
+function renderMap() {
+  const q = $("svc-filter").value.trim().toLowerCase();
+  const rows = svcMap.filter((s) => !s.user_instance && (!q || s.name.toLowerCase().includes(q) || s.display.toLowerCase().includes(q)));
+  $("svc-map").innerHTML = rows
+    .slice(0, 400)
+    .map(
+      (s) => `<div class="svc">
+        <div><b>${esc(s.display)}</b> <span class="sub">${esc(s.name)}</span>${s.critical ? ' <span class="tag">vital</span>' : ""}</div>
+        <div class="sub">${s.running ? "pornit" : "oprit"} · pornire ${esc(START[s.start] || s.start)}</div>
+        ${s.depends_on.length ? `<div class="sub">depinde de: ${s.depends_on.map(esc).join(", ")}</div>` : ""}
+        ${s.required_by.length ? `<div class="sub">necesar pentru: ${s.required_by.map(esc).join(", ")}</div>` : ""}
+      </div>`
+    )
+    .join("");
+}
+
+async function loadServicesPage() {
+  const p = store.get("piocare.profile", "acasa");
+  const r = document.querySelector(`input[name=profile][value="${p}"]`);
+  if (r) r.checked = true;
+  analyzeServices();
+  try {
+    svcMap = await invoke("services_list");
+    renderMap();
+  } catch (e) {
+    $("svc-map").textContent = String(e);
+  }
+}
+
+$("profiles").addEventListener("change", analyzeServices);
+$("features").addEventListener("change", analyzeServices);
+$("svc-proposals").addEventListener("change", updateApply);
+$("svc-filter").addEventListener("input", renderMap);
+$("btn-svc-apply").addEventListener("click", async () => {
+  const names = [...document.querySelectorAll("#svc-proposals input:checked")].map((c) => c.dataset.svc);
+  if (!names.length) return;
+  $("btn-svc-apply").disabled = true;
+  svcStatus("Se aplică (Windows va cere confirmarea de administrator)…", "warn");
+  try {
+    const op = await invoke("services_apply", { profile: currentProfile(), uses: currentUses(), names });
+    const [label] = STATUS[op.status] || [op.status];
+    await analyzeServices();
+    svcMap = await invoke("services_list");
+    renderMap();
+    svcStatus(`${op.title}: ${label}. Efect după repornire. Se poate anula din „Jurnal și anulare”.`, op.status === "applied" ? "ok" : "bad");
+  } catch (e) {
+    svcStatus(String(e), "bad");
+    updateApply();
   }
 });
 

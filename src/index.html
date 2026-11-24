@@ -13,7 +13,7 @@
       <a class="active" href="#panou" data-page="panou">Panou</a>
       <a class="soon" href="#">Întreținere</a>
       <a href="#registru" data-page="registru">Registru curat</a>
-      <a class="soon" href="#">Componente și servicii</a>
+      <a href="#servicii" data-page="servicii">Componente și servicii</a>
       <a class="soon" href="#">Firewall</a>
       <a href="#jurnal" data-page="jurnal">Jurnal și anulare</a>
     </nav>
@@ -59,6 +59,35 @@
       <p class="lead">Caută resturi lăsate de programe dezinstalate. O intrare apare doar dacă fișierul către care trimite sigur nu mai există. Înainte de ștergere se face copie, iar totul se poate anula din „Jurnal și anulare”.</p>
       <div id="reg-status" class="status hidden"></div>
       <div id="reg-results"><p class="empty">Apasă „Scanează”. Scanarea doar citește, nu schimbă nimic.</p></div>
+    </div>
+
+    <div class="page hidden" id="page-servicii">
+      <header>
+        <h1>Componente și servicii</h1>
+        <div class="actions">
+          <button id="btn-svc-apply" disabled>Aplică selectate</button>
+        </div>
+      </header>
+      <p class="lead">Alege cum folosești calculatorul. PioCare propune doar servicii de care nu ai nevoie și nu oprește niciodată un serviciu de care depinde altul activ (atunci îl lasă pe „manual”, adică pornește singur doar când e nevoie). Schimbările au efect după repornire și se pot anula din jurnal.</p>
+
+      <div class="op">
+        <b>Profil</b>
+        <div class="seg" id="profiles">
+          <label><input type="radio" name="profile" value="acasa" checked> Acasă</label>
+          <label><input type="radio" name="profile" value="birou"> Birou</label>
+          <label><input type="radio" name="profile" value="gaming"> Gaming</label>
+        </div>
+        <b>Ce folosești pe acest calculator?</b>
+        <div class="feats" id="features"></div>
+      </div>
+
+      <div id="svc-status" class="status hidden"></div>
+      <div id="svc-proposals"></div>
+
+      <h2>Harta serviciilor</h2>
+      <p class="lead">Toate serviciile Windows, cu dependențele în ambele sensuri. Cele marcate „vital” nu sunt atinse niciodată de PioCare.</p>
+      <input id="svc-filter" class="search" placeholder="Caută serviciu (nume sau descriere)…">
+      <div id="svc-map" class="map"></div>
     </div>
 
     <div class="page hidden" id="page-jurnal">

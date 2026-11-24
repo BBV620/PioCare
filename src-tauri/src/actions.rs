@@ -195,6 +195,9 @@ mod win {
         if name.is_empty() || name.contains(['\\', '/']) {
             return Err("nume de serviciu invalid".into());
         }
+        if crate::services::is_critical(name) {
+            return Err(format!("{name} este un serviciu vital al Windows; PioCare nu îl schimbă"));
+        }
         let k = RegKey::predef(HKEY_LOCAL_MACHINE)
             .open_subkey(svc_key(name))
             .map_err(|_| format!("serviciul {name} nu există"))?;

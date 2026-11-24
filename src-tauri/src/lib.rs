@@ -6,6 +6,7 @@ mod cleaner;
 mod engine;
 mod journal;
 mod rules;
+mod services;
 mod sys;
 mod system;
 
@@ -129,6 +130,35 @@ fn registry_clean(ids: Vec<String>) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Harta serviciilor (doar citire).
+#[tauri::command(async)]
+fn services_list() -> Result<Vec<services::Svc>, String> {
+    services::list()
+}
+
+/// Propuneri pentru profilul și funcțiile alese (doar citire).
+#[tauri::command(async)]
+fn services_analyze(profile: String, uses: Vec<String>) -> Result<services::Analysis, String> {
+    services::analyze(&profile, &uses)
+}
+
+/// Aplică propunerile bifate. Reanalizează, ca să folosească doar propuneri încă valabile.
+#[tauri::command(async)]
+fn services_apply(profile: String, uses: Vec<String>, names: Vec<String>) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let a = services::analyze(&profile, &uses)?;
+    let chosen: Vec<_> = a.proposals.into_iter().filter(|p| names.contains(&p.service)).collect();
+    if chosen.is_empty() {
+        return Err("nicio propunere selectată nu mai este valabilă; analizează din nou".into());
+    }
+    let plan = Plan {
+        title: format!("Servicii, profil {profile}: {} schimbări", chosen.len()),
+        rule_id: Some(format!("services.{profile}")),
+        actions: services::to_actions(&chosen),
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 /// Starea Protecției sistemului pe C: (null = necunoscută fără administrator).
 #[tauri::command]
 fn protection_status() -> Option<bool> {
@@ -188,6 +218,9 @@ pub fn run() {
             service_test_operation,
             registry_scan,
             registry_clean,
+            services_list,
+            services_analyze,
+            services_apply,
             enable_protection,
             open_folder
         ])
