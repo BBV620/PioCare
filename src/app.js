@@ -17,6 +17,14 @@ const when = (secs) => new Date(secs * 1000).toLocaleString(locale(), { dateStyl
 const statusLabel = (s) => t(`status.${s}`);
 const statusClass = { applied: "ok", backup_done: "ok", cleanup_done: "ok", undone: "muted", in_progress: "warn", rolled_back: "warn", failed: "bad", partially_undone: "bad" };
 const risk = (r) => [t(`common.risk.${r}`), r === "low" ? "ok" : "warn"];
+/** Starea punctului de restaurare, tradusă la afișare (textul din jurnal rămâne în limba de atunci). */
+function rpLabel(text) {
+  if (!text) return "";
+  if (/necreat|not created/.test(text)) return t("rp.failed");
+  if (/recent/.test(text)) return t("rp.recent");
+  if (/creat|created/.test(text)) return t("rp.ok");
+  return text;
+}
 const startLabel = (s) => (["auto", "delayed", "manual", "disabled", "boot", "system"].includes(s) ? t(`start.${s}`) : s);
 
 function applyTexts() {
@@ -50,6 +58,60 @@ async function chooseLanguage(lang) {
 }
 $("lang-select").addEventListener("change", (e) => chooseLanguage(e.target.value));
 document.querySelectorAll("#lang-pick button[data-lang]").forEach((b) => b.addEventListener("click", () => chooseLanguage(b.dataset.lang)));
+
+// ---------- „Ce este?” ----------
+const VERDICT_CLS = { vital: "bad", keep: "ok", optional: "warn", safe_off: "ok", unknown: "muted" };
+/** Buton ⓘ; kind = "service" | "program". */
+const infoBtn = (kind, name, path = "") =>
+  `<button class="info" data-ex-kind="${kind}" data-ex-name="${esc(name)}" data-ex-path="${esc(path)}" title="${esc(t("ex.btn"))}">${esc(t("ex.btn"))}</button>`;
+
+async function openExplain(kind, name, path) {
+  $("ex-name").textContent = name;
+  $("ex-verdict").textContent = "";
+  $("ex-verdict").className = "badge";
+  $("ex-body").innerHTML = `<p class="sub">${esc(t("ex.loading"))}</p>`;
+  $("explain").classList.remove("hidden");
+  try {
+    const e = await invoke("explain", { kind, name, path: path || null });
+    $("ex-name").textContent = e.file_description && kind === "program" ? `${name} · ${e.file_description}` : name;
+    $("ex-verdict").textContent = t(`ex.v.${e.verdict}`);
+    $("ex-verdict").className = `badge ${VERDICT_CLS[e.verdict] || ""}`;
+    const sec = (title, body) => (body ? `<div class="exsec"><b>${esc(title)}</b>${esc(body)}</div>` : "");
+    let html = "";
+    if (e.known) {
+      html += sec(t("ex.what"), e.what) + sec(t("ex.off"), e.off);
+    } else if (e.verdict === "vital") {
+      html += `<p>${esc(t("ex.vitalGeneric"))}</p>`;
+    } else {
+      html += `<p class="sub">${esc(t("ex.unknown"))}</p>`;
+    }
+    html += sec(t("ex.windows"), e.windows_description);
+    html += sec(t("ex.company"), e.company);
+    html += sec(t("ex.file"), e.path);
+    html += `<p class="sub" style="margin-top:14px">${esc(t("ex.base", { v: e.base_version }))}</p>`;
+    $("ex-body").innerHTML = html;
+  } catch (err) {
+    $("ex-body").textContent = String(err);
+  }
+}
+document.addEventListener(
+  "click",
+  (e) => {
+    const b = e.target.closest("button.info");
+    if (!b) return;
+    e.preventDefault(); // nu bifa/debifa căsuța din eticheta în care stă butonul
+    e.stopPropagation();
+    openExplain(b.dataset.exKind, b.dataset.exName, b.dataset.exPath);
+  },
+  true
+);
+$("ex-close").addEventListener("click", () => $("explain").classList.add("hidden"));
+$("explain").addEventListener("click", (e) => {
+  if (e.target.id === "explain") $("explain").classList.add("hidden");
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") $("explain").classList.add("hidden");
+});
 
 // ---------- navigare ----------
 function show(page) {
@@ -100,7 +162,10 @@ async function loadOverview() {
     const ops = await invoke("journal_list");
     const b = ops.find((x) => x.kind === "backup" && x.status === "backup_done");
     $("lastbackup").textContent = b ? when(b.created) : t("panou.none");
-    $("lastbackupsub").textContent = b ? t("panou.backupSub", { n: b.files.length, rp: b.restore_point || "" }) : t("panou.backupHint");
+    const rpFailed = b && /necreat|not created/.test(b.restore_point || "");
+    $("lastbackupsub").textContent = b
+      ? t("panou.backupSub", { n: b.files.length, rp: rpLabel(b.restore_point) }) + (rpFailed ? ` · ${t("panou.backupRedo")}` : "")
+      : t("panou.backupHint");
 
     $("mode").textContent = (await invoke("is_admin")) ? t("mode.admin") : t("mode.user");
   } catch (e) {
@@ -274,14 +339,16 @@ async function analyzeServices() {
       if (saved.length) return analyzeServices();
     }
     svcStatus(`${t("svc.summary", { n: a.total_services, r: a.running_services, p: a.proposals.length })} · ${t("common.rules", { v: a.rules_version })}`, a.proposals.length ? "warn" : "ok");
+    const featName = (k) => a.features[k] || k;
     $("svc-proposals").innerHTML = a.proposals.length
-      ? `<div class="op"><ul class="finds">${a.proposals
+      ? `<div class="op"><p class="sub legend">${esc(t("svc.legend"))}</p><ul class="finds">${a.proposals
           .map((p) => {
             const [rl, rc] = risk(p.risk);
             return `<li><label><input type="checkbox" data-svc="${esc(p.service)}" ${p.risk === "low" ? "checked" : ""}>
-              <span><b>${esc(p.display)}</b> <span class="badge ${rc}">${esc(rl)}</span>${p.running ? ` <span class="tag">${esc(t("svc.runningNow"))}</span>` : ""}
+              <span><b>${esc(p.display)}</b> <span class="badge ${rc}">${esc(rl)}</span>${p.running ? ` <span class="tag">${esc(t("svc.runningNow"))}</span>` : ""}${infoBtn("service", p.service)}
               <div class="sub">${esc(startLabel(p.current))} → <b>${esc(startLabel(p.proposed))}</b> · ${esc(p.service)}</div>
               <div class="sub">${esc(p.why)}</div>
+              ${p.needed_for.length ? `<div class="sub needline">${esc(t("svc.neededFor", { l: p.needed_for.map(featName).join("; ") }))}</div>` : ""}
               ${p.note ? `<div class="sub warnline">${esc(p.note)}</div>` : ""}</span></label></li>`;
           })
           .join("")}</ul></div>`
@@ -299,7 +366,7 @@ function renderMap() {
     .slice(0, 400)
     .map(
       (s) => `<div class="svc">
-        <div><b>${esc(s.display)}</b> <span class="sub">${esc(s.name)}</span>${s.critical ? ` <span class="tag">${esc(t("svc.vital"))}</span>` : ""}</div>
+        <div><b>${esc(s.display)}</b> <span class="sub">${esc(s.name)}</span>${s.critical ? ` <span class="tag">${esc(t("svc.vital"))}</span>` : ""}${infoBtn("service", s.name)}</div>
         <div class="sub">${esc(s.running ? t("svc.on") : t("svc.off"))} · ${esc(t("svc.startup", { s: startLabel(s.start) }))}</div>
         ${s.depends_on.length ? `<div class="sub">${esc(t("svc.dependsOn", { l: s.depends_on.join(", ") }))}</div>` : ""}
         ${s.required_by.length ? `<div class="sub">${esc(t("svc.requiredBy", { l: s.required_by.join(", ") }))}</div>` : ""}
@@ -343,6 +410,13 @@ $("btn-svc-apply").addEventListener("click", async () => {
 });
 
 // ---------- firewall ----------
+/** ⓘ pentru regulile care blochează un program (ex. out-mshta → mshta.exe). */
+function fwInfo(p) {
+  const prog = p.action && p.action.program;
+  if (!prog) return "";
+  const file = prog.split("\\").pop();
+  return infoBtn("program", file, prog);
+}
 const fwUses = () => [...document.querySelectorAll("#fw-features input:checked")].map((c) => c.value);
 const fwStatusMsg = statusBox("fw-status");
 
@@ -380,7 +454,7 @@ async function loadFirewall() {
           .map((p) => {
             const [rl, rc] = risk(p.risk);
             return `<li><label><input type="checkbox" data-fw="${esc(p.id)}" ${p.risk === "low" ? "checked" : ""}>
-              <span><b>${esc(p.title)}</b> <span class="badge ${rc}">${esc(rl)}</span>
+              <span><b>${esc(p.title)}</b> <span class="badge ${rc}">${esc(rl)}</span>${fwInfo(p)}
               <div class="sub">${esc(p.why)}</div></span></label></li>`;
           })
           .join("")}</ul></div>`
@@ -402,7 +476,7 @@ async function loadActivity() {
         ? `<div class="map">${a.programs
             .map(
               (p) => `<div class="svc">
-          <div><b>${esc(p.name || "?")}</b>${p.new ? ` <span class="badge warn">${esc(t("fw.new"))}</span>` : ""}${p.blocked ? ` <span class="tag">${esc(t("fw.blockedBy"))}</span>` : ""}</div>
+          <div><b>${esc(p.name || "?")}</b>${p.new ? ` <span class="badge warn">${esc(t("fw.new"))}</span>` : ""}${p.blocked ? ` <span class="tag">${esc(t("fw.blockedBy"))}</span>` : ""}${p.name ? infoBtn("program", p.name, p.path || "") : ""}</div>
           <div class="sub">${esc(p.path || t("fw.hiddenPath"))}</div>
           <div class="sub">${esc(t("fw.conns", { n: p.connections, l: p.remotes.join(", ") }))}</div>
           ${p.path && !p.blocked ? `<div class="op-actions"><button class="ghost" data-block="${esc(p.path)}">${esc(t("fw.block"))}</button></div>` : ""}

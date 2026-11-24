@@ -4,6 +4,7 @@
 mod actions;
 mod cleaner;
 mod engine;
+mod explain;
 mod firewall;
 mod i18n;
 mod journal;
@@ -204,6 +205,15 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// „Ce este?” pentru un serviciu sau program (doar citire).
+#[tauri::command(async)]
+fn explain(kind: String, name: String, path: Option<String>) -> Result<explain::Explanation, String> {
+    match kind.as_str() {
+        "service" => explain::service(&name),
+        _ => explain::program(&name, path),
+    }
+}
+
 #[derive(serde::Serialize)]
 struct LangInfo {
     /// null = nealeasă încă (se întreabă la prima pornire)
@@ -297,6 +307,7 @@ pub fn run() {
             services_list,
             services_analyze,
             services_apply,
+            explain,
             get_language,
             set_language,
             maintenance_scan,

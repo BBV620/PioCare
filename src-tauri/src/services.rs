@@ -321,6 +321,14 @@ pub fn analyze(profile: &str, uses: &[String]) -> Result<Analysis, String> {
     })
 }
 
+/// Pentru „Ce este?”: explicația din regula de servicii (dacă există) și pentru ce funcții e necesar.
+pub fn rule_info(name: &str) -> Option<(String, String, Vec<String>)> {
+    let r = rules().ok()?;
+    let ru = r.rules.iter().find(|x| x.service.eq_ignore_ascii_case(name))?;
+    let feats = ru.needed_for.iter().filter_map(|f| r.features.get(f).map(|t| t.get())).collect();
+    Some((ru.why.get(), ru.risk.clone(), feats))
+}
+
 pub fn to_actions(props: &[Proposal]) -> Vec<ActionSpec> {
     props.iter().map(|p| ActionSpec::ServiceStartType { name: p.service.clone(), start: p.proposed }).collect()
 }
@@ -338,6 +346,14 @@ mod tests {
             for f in &ru.needed_for {
                 assert!(r.features.contains_key(f), "regula {}: funcție necunoscută {f}", ru.id);
             }
+        }
+    }
+
+    #[test]
+    fn ticking_a_feature_removes_its_services() {
+        let a = analyze("acasa", &["bluetooth".to_string()]).unwrap();
+        for s in ["bthserv", "BTAGService", "BthAvctpSvc"] {
+            assert!(!a.proposals.iter().any(|p| p.service.eq_ignore_ascii_case(s)), "{s} nu trebuia propus când Bluetooth e folosit");
         }
     }
 
