@@ -1,0 +1,39 @@
+# Sistem de operare / editoare
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Build și dependențe (stack-ul se alege ulterior)
+bin/
+obj/
+build/
+dist/
+out/
+target/
+node_modules/
+*.exe
+*.msi
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Jurnale, temporare, copii de siguranță
+*.log
+*.tmp
+*.bak
+*.reg.bak
+logs/
+
+# Secrete și setări locale
+.env
+.env.*
+*.pfx
+*.p12
+*.key
+.claude/settings.local.json
