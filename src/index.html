@@ -14,7 +14,7 @@
       <a class="soon" href="#">Întreținere</a>
       <a href="#registru" data-page="registru">Registru curat</a>
       <a href="#servicii" data-page="servicii">Componente și servicii</a>
-      <a class="soon" href="#">Firewall</a>
+      <a href="#firewall" data-page="firewall">Firewall</a>
       <a href="#jurnal" data-page="jurnal">Jurnal și anulare</a>
     </nav>
     <div class="mode" id="mode">Mod: utilizator</div>
@@ -88,6 +88,30 @@
       <p class="lead">Toate serviciile Windows, cu dependențele în ambele sensuri. Cele marcate „vital” nu sunt atinse niciodată de PioCare.</p>
       <input id="svc-filter" class="search" placeholder="Caută serviciu (nume sau descriere)…">
       <div id="svc-map" class="map"></div>
+    </div>
+
+    <div class="page hidden" id="page-firewall">
+      <header>
+        <h1>Firewall pentru siguranță</h1>
+        <div class="actions">
+          <button id="btn-fw-apply" disabled>Aplică selectate</button>
+        </div>
+      </header>
+      <p class="lead">PioCare lucrează peste Windows Firewall și doar adaugă blocări: porți de intrare folosite de atacatori și unelte Windows prin care virușii descarcă alți viruși. Navigarea, actualizările și jocurile nu sunt atinse. Toate regulile poartă numele „PioCare” și se pot anula din jurnal.</p>
+
+      <section class="cards" id="fw-profiles"></section>
+
+      <div class="op" style="margin-top:14px">
+        <b>Ce folosești?</b>
+        <div class="feats" id="fw-features"></div>
+      </div>
+      <div id="fw-status" class="status hidden"></div>
+      <div id="fw-proposals"></div>
+
+      <h2>Programe care ies acum pe internet</h2>
+      <p class="lead">Programele noi, nevăzute până acum de PioCare, apar primele, marcate „nou”. Un program necunoscut poate fi blocat cu un clic (se poate anula din jurnal).</p>
+      <div class="actions" style="margin-bottom:10px"><button class="ghost" id="btn-fw-activity">Reîmprospătează</button></div>
+      <div id="fw-activity"></div>
     </div>
 
     <div class="page hidden" id="page-jurnal">

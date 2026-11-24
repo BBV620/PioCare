@@ -47,12 +47,18 @@ pub enum ActionSpec {
     ServiceStartType { name: String, start: StartType },
     /// Protecția sistemului (puncte de restaurare) pe discul C:.
     SystemProtection { enabled: bool },
+    /// Regulă de BLOCARE în Windows Firewall, creată de PioCare (nume „PioCare-…”, grup „PioCare”).
+    FirewallBlock(crate::firewall::FwRule),
+    /// Profil de firewall (Domain / Private / Public): pornit + intrările nesolicitate blocate.
+    FirewallProfileOn { profile: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Before {
     Protection { enabled: bool },
+    FwRule { existed: bool },
+    FwProfile { enabled: bool, inbound: String },
     /// Starea unei valori: dacă exista cheia și ce valoare era (None = nu exista).
     Value { key_existed: bool, value: Option<RegData> },
     /// Cheia întreagă, exportată cu `reg export` (fișierul e în folderul operației).
@@ -66,7 +72,10 @@ impl ActionSpec {
             ActionSpec::RegSetValue { root, .. }
             | ActionSpec::RegDeleteValue { root, .. }
             | ActionSpec::RegDeleteKey { root, .. } => *root == Root::HKLM,
-            ActionSpec::ServiceStartType { .. } | ActionSpec::SystemProtection { .. } => true,
+            ActionSpec::ServiceStartType { .. }
+            | ActionSpec::SystemProtection { .. }
+            | ActionSpec::FirewallBlock(_)
+            | ActionSpec::FirewallProfileOn { .. } => true,
         }
     }
 
@@ -80,6 +89,8 @@ impl ActionSpec {
             ActionSpec::SystemProtection { enabled } => {
                 format!("Protecția sistemului pe C: {}", if *enabled { "pornită" } else { "oprită" })
             }
+            ActionSpec::FirewallBlock(r) => format!("Firewall: blochează {}", r.display),
+            ActionSpec::FirewallProfileOn { profile } => format!("Firewall: profilul {profile} pornit, intrări blocate"),
         }
     }
 }
@@ -280,6 +291,14 @@ mod win {
             ActionSpec::SystemProtection { .. } => Ok(Before::Protection {
                 enabled: crate::sys::protection_enabled_c().ok_or("nu pot citi starea Protecției sistemului")?,
             }),
+            ActionSpec::FirewallBlock(r) => {
+                r.validate()?;
+                Ok(Before::FwRule { existed: crate::firewall::rule_exists(&r.name) })
+            }
+            ActionSpec::FirewallProfileOn { profile } => {
+                let p = crate::firewall::read_profile(profile)?;
+                Ok(Before::FwProfile { enabled: p.enabled, inbound: p.inbound })
+            }
         }
     }
 
@@ -294,6 +313,8 @@ mod win {
             },
             ActionSpec::ServiceStartType { name, start } => set_service(name, *start),
             ActionSpec::SystemProtection { enabled } => crate::sys::set_protection_c(*enabled),
+            ActionSpec::FirewallBlock(r) => crate::firewall::add_rule(r),
+            ActionSpec::FirewallProfileOn { profile } => crate::firewall::set_profile(profile, true, "Block"),
         }
     }
 
@@ -324,6 +345,12 @@ mod win {
             },
             (ActionSpec::ServiceStartType { name, .. }, Before::Service { start }) => set_service(name, *start),
             (ActionSpec::SystemProtection { .. }, Before::Protection { enabled }) => crate::sys::set_protection_c(*enabled),
+            (ActionSpec::FirewallBlock(r), Before::FwRule { existed }) => {
+                if *existed { Ok(()) } else { crate::firewall::remove_rule(&r.name) }
+            }
+            (ActionSpec::FirewallProfileOn { profile }, Before::FwProfile { enabled, inbound }) => {
+                crate::firewall::set_profile(profile, *enabled, inbound)
+            }
             _ => Err("starea salvată nu se potrivește cu acțiunea".into()),
         }
     }

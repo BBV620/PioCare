@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "version": "2026.11.24",
+  "kind": "firewall",
+  "description": "Politică Windows Firewall orientată spre siguranța utilizatorului. Doar blocări suplimentare; nu se taie nimic din traficul obișnuit (navigare, actualizări, jocuri).",
+  "features": {
+    "partajare_fisiere": "Partajez fișiere sau imprimante cu alte calculatoare din casă/birou",
+    "desktop_distanta": "Mă conectez la acest PC de la distanță (Desktop la distanță)",
+    "retea_locala": "Streaming media în rețeaua locală (TV, console)"
+  },
+  "profiles": [
+    { "id": "fw.profile.public", "profile": "Public", "why": "Rețele străine (cafenea, hotel, aeroport): firewall pornit, tot ce vine din afară blocat." },
+    { "id": "fw.profile.private", "profile": "Private", "why": "Rețeaua de acasă: firewall pornit, intrările nesolicitate blocate." },
+    { "id": "fw.profile.domain", "profile": "Domain", "why": "Rețea de firmă: firewall pornit." }
+  ],
+  "rules": [
+    { "id": "in-smb-public", "display": "Partajare fișiere (SMB) din rețele publice", "direction": "in", "protocol": "TCP", "local_ports": "139,445", "profiles": "Public", "needed_for": [], "risk": "low", "why": "Portul prin care s-au răspândit WannaCry și alți viermi. Într-o rețea străină nu are ce căuta deschis." },
+    { "id": "in-smb-private", "display": "Partajare fișiere (SMB) din rețeaua de acasă", "direction": "in", "protocol": "TCP", "local_ports": "139,445", "profiles": "Private", "needed_for": ["partajare_fisiere"], "risk": "medium", "why": "Dacă nu partajezi fișiere cu alte PC-uri, nimeni din rețea nu trebuie să ajungă la discurile tale." },
+    { "id": "in-netbios-public", "display": "NetBIOS din rețele publice", "direction": "in", "protocol": "UDP", "local_ports": "137,138", "profiles": "Public", "needed_for": [], "risk": "low", "why": "Anunță numele PC-ului în rețea; folosit pentru recunoaștere de atacatori." },
+    { "id": "in-rdp", "display": "Desktop la distanță (RDP)", "direction": "in", "protocol": "TCP", "local_ports": "3389", "profiles": "Any", "needed_for": ["desktop_distanta"], "risk": "medium", "why": "Una dintre cele mai atacate porți de intrare în Windows." },
+    { "id": "in-winrm", "display": "Administrare la distanță (WinRM)", "direction": "in", "protocol": "TCP", "local_ports": "5985,5986", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Control al PC-ului prin PowerShell din rețea; inutil pe un PC personal." },
+    { "id": "in-telnet", "display": "Telnet", "direction": "in", "protocol": "TCP", "local_ports": "23", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Protocol vechi, necriptat." },
+    { "id": "in-llmnr-public", "display": "LLMNR din rețele publice", "direction": "in", "protocol": "UDP", "local_ports": "5355", "profiles": "Public", "needed_for": [], "risk": "low", "why": "Folosit în atacuri de furt de parole în rețele Wi-Fi publice." },
+    { "id": "in-ssdp-public", "display": "UPnP / SSDP din rețele publice", "direction": "in", "protocol": "UDP", "local_ports": "1900", "profiles": "Public", "needed_for": [], "risk": "low", "why": "Descoperire automată de dispozitive; într-o rețea străină doar expune PC-ul." },
+    { "id": "in-upnp-public", "display": "UPnP Host din rețele publice", "direction": "in", "protocol": "TCP", "local_ports": "2869", "profiles": "Public", "needed_for": [], "risk": "low", "why": "Găzduire dispozitive UPnP; inutil în rețele străine." },
+    { "id": "in-ssdp-private", "display": "UPnP / SSDP din rețeaua de acasă", "direction": "in", "protocol": "UDP", "local_ports": "1900", "profiles": "Private", "needed_for": ["retea_locala"], "risk": "low", "why": "Dacă nu faci streaming spre TV/console, nu e nevoie." },
+    { "id": "out-mshta", "display": "Ieșire pe internet: mshta.exe", "direction": "out", "program": "%SystemRoot%\\System32\\mshta.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Unealtă Windows veche, folosită des de viruși pentru a descărca alți viruși." },
+    { "id": "out-mshta-32", "display": "Ieșire pe internet: mshta.exe (32 biți)", "direction": "out", "program": "%SystemRoot%\\SysWOW64\\mshta.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Idem, varianta pe 32 de biți." },
+    { "id": "out-wscript", "display": "Ieșire pe internet: wscript.exe", "direction": "out", "program": "%SystemRoot%\\System32\\wscript.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Rulează scripturi .vbs/.js, metoda clasică a atașamentelor infectate." },
+    { "id": "out-wscript-32", "display": "Ieșire pe internet: wscript.exe (32 biți)", "direction": "out", "program": "%SystemRoot%\\SysWOW64\\wscript.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Idem, varianta pe 32 de biți." },
+    { "id": "out-cscript", "display": "Ieșire pe internet: cscript.exe", "direction": "out", "program": "%SystemRoot%\\System32\\cscript.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Rulează scripturi în linie de comandă; folosit de viruși." },
+    { "id": "out-cscript-32", "display": "Ieșire pe internet: cscript.exe (32 biți)", "direction": "out", "program": "%SystemRoot%\\SysWOW64\\cscript.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Idem, varianta pe 32 de biți." },
+    { "id": "out-regsvr32", "display": "Ieșire pe internet: regsvr32.exe", "direction": "out", "program": "%SystemRoot%\\System32\\regsvr32.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Înregistrează biblioteci; poate fi păcălit să descarce cod de pe internet." },
+    { "id": "out-regsvr32-32", "display": "Ieșire pe internet: regsvr32.exe (32 biți)", "direction": "out", "program": "%SystemRoot%\\SysWOW64\\regsvr32.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Idem, varianta pe 32 de biți." },
+    { "id": "out-certutil", "display": "Ieșire pe internet: certutil.exe", "direction": "out", "program": "%SystemRoot%\\System32\\certutil.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Unealtă de certificate folosită frecvent de viruși ca „descărcător”." },
+    { "id": "out-certutil-32", "display": "Ieșire pe internet: certutil.exe (32 biți)", "direction": "out", "program": "%SystemRoot%\\SysWOW64\\certutil.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Idem, varianta pe 32 de biți." },
+    { "id": "out-bitsadmin", "display": "Ieșire pe internet: bitsadmin.exe", "direction": "out", "program": "%SystemRoot%\\System32\\bitsadmin.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Unealtă veche de descărcare; Windows Update NU o folosește." },
+    { "id": "out-hh", "display": "Ieșire pe internet: hh.exe (Ajutor HTML)", "direction": "out", "program": "%SystemRoot%\\hh.exe", "profiles": "Any", "needed_for": [], "risk": "low", "why": "Fișierele de ajutor .chm pot ascunde cod care descarcă viruși." }
+  ]
+}

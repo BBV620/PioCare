@@ -22,6 +22,7 @@ function show(page) {
   document.querySelectorAll("nav a[data-page]").forEach((a) => a.classList.toggle("active", a.dataset.page === page));
   if (page === "jurnal") loadJournal();
   if (page === "servicii") loadServicesPage();
+  if (page === "firewall") loadFirewallPage();
 }
 document.querySelectorAll("nav a").forEach((a) =>
   a.addEventListener("click", (e) => {
@@ -326,6 +327,128 @@ $("btn-svc-apply").addEventListener("click", async () => {
   } catch (e) {
     svcStatus(String(e), "bad");
     updateApply();
+  }
+});
+
+// ---------- firewall ----------
+const PROFILE_RO = { Public: "Rețele publice", Private: "Rețeaua de acasă", Domain: "Rețea de firmă" };
+const fwUses = () => [...document.querySelectorAll("#fw-features input:checked")].map((c) => c.value);
+
+function fwStatusMsg(text, kind = "") {
+  const s = $("fw-status");
+  s.textContent = text;
+  s.className = `status ${kind}`;
+  if (!text) s.classList.add("hidden");
+}
+
+function updateFwApply() {
+  const n = document.querySelectorAll("#fw-proposals input:checked").length;
+  $("btn-fw-apply").disabled = n === 0;
+  $("btn-fw-apply").textContent = n ? `Aplică selectate (${n})` : "Aplică selectate";
+}
+
+async function loadFirewall() {
+  if ($("fw-features").children.length) store.set("piocare.fwuses", fwUses());
+  try {
+    const s = await invoke("firewall_status", { uses: fwUses() });
+    if (!$("fw-features").children.length) {
+      const saved = store.get("piocare.fwuses", []);
+      $("fw-features").innerHTML = Object.entries(s.features)
+        .map(([k, v]) => `<label><input type="checkbox" value="${esc(k)}" ${saved.includes(k) ? "checked" : ""}> ${esc(v)}</label>`)
+        .join("");
+      if (saved.length) return loadFirewall();
+    }
+    $("fw-profiles").innerHTML = s.profiles
+      .map((p) => {
+        const ok = p.enabled && p.inbound !== "Allow";
+        return `<div class="card"><h3>${esc(PROFILE_RO[p.profile] || p.profile)}</h3>
+          <p class="big ${ok ? "" : "muted"}">${p.enabled ? "pornit" : "OPRIT"}</p>
+          <p class="sub">intrări nesolicitate: ${p.inbound === "Allow" ? "PERMISE" : "blocate"}${p.policy_managed ? " · gestionat de politică de grup" : ""}</p></div>`;
+      })
+      .join("");
+    fwStatusMsg(
+      `${s.total_rules} reguli în Windows Firewall · ${s.piocare_rules.length} puse de PioCare · ${s.proposals.length} propuneri · reguli v${s.rules_version}`,
+      s.proposals.length ? "warn" : "ok"
+    );
+    $("fw-proposals").innerHTML = s.proposals.length
+      ? `<div class="op"><ul class="finds">${s.proposals
+          .map((p) => {
+            const [rl, rc] = RISK[p.risk] || [p.risk, ""];
+            return `<li><label><input type="checkbox" data-fw="${esc(p.id)}" ${p.risk === "low" ? "checked" : ""}>
+              <span><b>${esc(p.title)}</b> <span class="badge ${rc}">${rl}</span>
+              <div class="sub">${esc(p.why)}</div></span></label></li>`;
+          })
+          .join("")}</ul></div>`
+      : `<p class="empty">Politica de siguranță PioCare este aplicată complet.</p>`;
+    updateFwApply();
+  } catch (e) {
+    fwStatusMsg(String(e), "bad");
+  }
+}
+
+async function loadActivity() {
+  $("fw-activity").innerHTML = `<p class="empty">Se citesc conexiunile…</p>`;
+  try {
+    const a = await invoke("firewall_activity");
+    const head = a.first_run
+      ? `<p class="sub">Prima rulare: am memorat ${a.known_count} programe ca fiind cunoscute. De acum, orice program nou va fi marcat.</p>`
+      : "";
+    $("fw-activity").innerHTML =
+      head +
+      (a.programs.length
+        ? `<div class="map">${a.programs
+            .map(
+              (p) => `<div class="svc">
+          <div><b>${esc(p.name || "?")}</b>${p.new ? ' <span class="badge warn">nou</span>' : ""}${p.blocked ? ' <span class="tag">blocat de PioCare</span>' : ""}</div>
+          <div class="sub">${esc(p.path || "cale ascunsă (proces de sistem sau al altui utilizator)")}</div>
+          <div class="sub">${p.connections} conexiuni · ${p.remotes.map(esc).join(", ")}</div>
+          ${p.path && !p.blocked ? `<div class="op-actions"><button class="ghost" data-block="${esc(p.path)}">Blochează ieșirea pe internet</button></div>` : ""}
+        </div>`
+            )
+            .join("")}</div>`
+        : `<p class="empty">Niciun program nu are acum conexiuni spre internet.</p>`);
+  } catch (e) {
+    $("fw-activity").textContent = String(e);
+  }
+}
+
+function loadFirewallPage() {
+  loadFirewall();
+  loadActivity();
+}
+
+$("fw-features").addEventListener("change", loadFirewall);
+$("fw-proposals").addEventListener("change", updateFwApply);
+$("btn-fw-activity").addEventListener("click", loadActivity);
+$("btn-fw-apply").addEventListener("click", async () => {
+  const ids = [...document.querySelectorAll("#fw-proposals input:checked")].map((c) => c.dataset.fw);
+  if (!ids.length) return;
+  $("btn-fw-apply").disabled = true;
+  fwStatusMsg("Se face copia firewall-ului și se aplică (Windows va cere confirmarea de administrator)…", "warn");
+  try {
+    const op = await invoke("firewall_apply", { uses: fwUses(), ids });
+    const [label] = STATUS[op.status] || [op.status];
+    await loadFirewall();
+    fwStatusMsg(`${op.title}: ${label}. Se poate anula din „Jurnal și anulare”.`, op.status === "applied" ? "ok" : "bad");
+  } catch (e) {
+    fwStatusMsg(String(e), "bad");
+    updateFwApply();
+  }
+});
+$("fw-activity").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-block]");
+  if (!b) return;
+  b.disabled = true;
+  fwStatusMsg("Se blochează (Windows va cere confirmarea de administrator)…", "warn");
+  try {
+    const op = await invoke("firewall_block_program", { path: b.dataset.block });
+    const [label] = STATUS[op.status] || [op.status];
+    fwStatusMsg(`${op.title}: ${label}.`, op.status === "applied" ? "ok" : "bad");
+    loadActivity();
+    loadFirewall();
+  } catch (err) {
+    fwStatusMsg(String(err), "bad");
+    b.disabled = false;
   }
 });
 

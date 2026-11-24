@@ -4,6 +4,7 @@
 mod actions;
 mod cleaner;
 mod engine;
+mod firewall;
 mod journal;
 mod rules;
 mod services;
@@ -159,6 +160,48 @@ fn services_apply(profile: String, uses: Vec<String>, names: Vec<String>) -> Res
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Firewall: stare + propuneri (doar citire).
+#[tauri::command(async)]
+fn firewall_status(uses: Vec<String>) -> Result<firewall::FwStatus, String> {
+    firewall::status(&uses)
+}
+
+/// Firewall: aplică propunerile bifate (reanalizează întâi), prin motor.
+#[tauri::command(async)]
+fn firewall_apply(uses: Vec<String>, ids: Vec<String>) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let st = firewall::status(&uses)?;
+    let chosen: Vec<_> = st.proposals.into_iter().filter(|p| ids.contains(&p.id)).collect();
+    if chosen.is_empty() {
+        return Err("nicio propunere selectată nu mai este valabilă; reîmprospătează".into());
+    }
+    let plan = Plan {
+        title: format!("Firewall: {} reguli de siguranță", chosen.len()),
+        rule_id: Some("firewall.policy".into()),
+        actions: firewall::proposals_to_actions(&chosen),
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
+/// Programele care au acum conexiuni spre internet (doar citire).
+#[tauri::command(async)]
+fn firewall_activity() -> Result<firewall::NetActivity, String> {
+    firewall::activity()
+}
+
+/// Blochează ieșirea pe internet pentru un program (prin motor, se poate anula).
+#[tauri::command(async)]
+fn firewall_block_program(path: String) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let rule = firewall::block_program_rule(&path)?;
+    let plan = Plan {
+        title: format!("Firewall: {}", rule.display),
+        rule_id: Some("firewall.block.program".into()),
+        actions: vec![ActionSpec::FirewallBlock(rule)],
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 /// Starea Protecției sistemului pe C: (null = necunoscută fără administrator).
 #[tauri::command]
 fn protection_status() -> Option<bool> {
@@ -221,6 +264,10 @@ pub fn run() {
             services_list,
             services_analyze,
             services_apply,
+            firewall_status,
+            firewall_apply,
+            firewall_activity,
+            firewall_block_program,
             enable_protection,
             open_folder
         ])

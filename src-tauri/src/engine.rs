@@ -137,6 +137,20 @@ fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
     }
     op.save(root)?;
 
+    // 1b. Pentru schimbări de firewall: export complet al politicii, înainte de orice.
+    if op.steps.iter().any(|s| matches!(s.action, ActionSpec::FirewallBlock(_) | ActionSpec::FirewallProfileOn { .. })) {
+        match sys::export_firewall(&dir.join("firewall-inainte.wfw")) {
+            Ok(()) => op.files.push("firewall-inainte.wfw".into()),
+            Err(e) => {
+                op.status = OpStatus::Failed;
+                op.notes.push(format!("Exportul firewall-ului a eșuat ({e}); nu s-a schimbat nimic."));
+                op.save(root)?;
+                return Ok(op);
+            }
+        }
+        op.save(root)?;
+    }
+
     // 2. Punct de restaurare, doar pentru schimbări de sistem (copiile proprii există deja).
     if admin {
         op.restore_point = Some(sys::restore_point(&op.title));
