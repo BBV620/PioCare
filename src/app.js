@@ -151,6 +151,76 @@ $("btn-test").addEventListener("click", (e) => runAction(e.target, "safe_test_op
 $("btn-backup").addEventListener("click", (e) =>
   runAction(e.target, "full_backup", {}, "Se face copia completă (Windows va cere confirmarea de administrator)…")
 );
+// ---------- registru curat ----------
+function regStatus(text, kind = "") {
+  const s = $("reg-status");
+  s.textContent = text;
+  s.className = `status ${kind}`;
+  if (!text) s.classList.add("hidden");
+}
+
+function updateCleanButton() {
+  const n = document.querySelectorAll("#reg-results input[type=checkbox]:checked").length;
+  $("btn-clean").disabled = n === 0;
+  $("btn-clean").textContent = n ? `Curăță selectate (${n})` : "Curăță selectate";
+}
+
+async function scanRegistry() {
+  $("btn-scan").disabled = true;
+  $("btn-clean").disabled = true;
+  regStatus("Se scanează registrul…", "warn");
+  try {
+    const r = await invoke("registry_scan");
+    regStatus(`Verificate ${r.scanned} intrări · găsite ${r.findings.length} · reguli v${r.rules_version}`, r.findings.length ? "warn" : "ok");
+    if (!r.findings.length) {
+      $("reg-results").innerHTML = `<p class="empty">Nu am găsit resturi. Registrul e curat.</p>`;
+      return;
+    }
+    const groups = {};
+    r.findings.forEach((f) => (groups[f.category] ||= { title: f.category_title, why: f.why, items: [] }).items.push(f));
+    $("reg-results").innerHTML = Object.values(groups)
+      .map(
+        (g) => `
+      <div class="op">
+        <div class="op-head"><div><b>${esc(g.title)}</b><div class="sub">${esc(g.why)}</div></div><span class="badge warn">${g.items.length}</span></div>
+        <ul class="finds">${g.items
+          .map(
+            (f) => `<li><label><input type="checkbox" checked data-id="${esc(f.id)}">
+              <span><b>${esc(f.title)}</b>${f.needs_admin ? ' <span class="tag">administrator</span>' : ""}
+              <div class="sub">${esc(f.location)}</div>
+              <div class="sub">lipsește: ${esc(f.missing)}</div></span></label></li>`
+          )
+          .join("")}</ul>
+      </div>`
+      )
+      .join("");
+    updateCleanButton();
+  } catch (e) {
+    regStatus(String(e), "bad");
+  } finally {
+    $("btn-scan").disabled = false;
+  }
+}
+
+$("reg-results").addEventListener("change", updateCleanButton);
+$("btn-scan").addEventListener("click", scanRegistry);
+$("btn-clean").addEventListener("click", async () => {
+  const ids = [...document.querySelectorAll("#reg-results input[type=checkbox]:checked")].map((c) => c.dataset.id);
+  if (!ids.length) return;
+  $("btn-clean").disabled = $("btn-scan").disabled = true;
+  regStatus("Se face copia și se curăță (pentru intrările de sistem Windows va cere confirmarea de administrator)…", "warn");
+  try {
+    const op = await invoke("registry_clean", { ids });
+    const [label] = STATUS[op.status] || [op.status];
+    await scanRegistry();
+    regStatus(`${op.title}: ${label}. Se poate anula din „Jurnal și anulare”.`, op.status === "applied" ? "ok" : "bad");
+  } catch (e) {
+    regStatus(String(e), "bad");
+    $("btn-scan").disabled = false;
+    updateCleanButton();
+  }
+});
+
 $("btn-svc").addEventListener("click", (e) =>
   runAction(e.target, "service_test_operation", {}, "Se aplică proba pe serviciu (Windows va cere confirmarea de administrator)…")
 );

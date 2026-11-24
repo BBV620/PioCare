@@ -12,7 +12,7 @@
     <nav>
       <a class="active" href="#panou" data-page="panou">Panou</a>
       <a class="soon" href="#">Întreținere</a>
-      <a class="soon" href="#">Registru curat</a>
+      <a href="#registru" data-page="registru">Registru curat</a>
       <a class="soon" href="#">Componente și servicii</a>
       <a class="soon" href="#">Firewall</a>
       <a href="#jurnal" data-page="jurnal">Jurnal și anulare</a>
@@ -46,6 +46,19 @@
         </div>
         <p class="note">Nicio schimbare nu se face fără copie de siguranță și fără posibilitate de anulare.</p>
       </section>
+    </div>
+
+    <div class="page hidden" id="page-registru">
+      <header>
+        <h1>Registru curat</h1>
+        <div class="actions">
+          <button class="ghost" id="btn-scan">Scanează</button>
+          <button id="btn-clean" disabled>Curăță selectate</button>
+        </div>
+      </header>
+      <p class="lead">Caută resturi lăsate de programe dezinstalate. O intrare apare doar dacă fișierul către care trimite sigur nu mai există. Înainte de ștergere se face copie, iar totul se poate anula din „Jurnal și anulare”.</p>
+      <div id="reg-status" class="status hidden"></div>
+      <div id="reg-results"><p class="empty">Apasă „Scanează”. Scanarea doar citește, nu schimbă nimic.</p></div>
     </div>
 
     <div class="page hidden" id="page-jurnal">

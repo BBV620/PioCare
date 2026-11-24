@@ -1,0 +1,18 @@
+REGEDIT4
+
+; Resturi FALSE pentru testarea modulului Registru curat in masina virtuala PioCare-Test.
+; Toate trimit catre C:\PioCareTest, folder care NU exista. NU importa pe calculatorul principal.
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run]
+"PioCareTestRun"="\"C:\\PioCareTest\\lipsa.exe\" /tray"
+
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\PioCareTestApp]
+"DisplayName"="PioCare Test App (rest)"
+"UninstallString"="\"C:\\PioCareTest\\unins000.exe\""
+"InstallLocation"="C:\\PioCareTest"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\piocaretest.exe]
+@="C:\\PioCareTest\\piocaretest.exe"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs]
+"C:\\PioCareTest\\comun.dll"=dword:00000001

@@ -66,3 +66,9 @@ button.ghost { background: transparent; color: var(--text); border: 1px solid va
 .err { color: var(--bad); font-size: 12px; margin-left: 100px; }
 .op-actions { display: flex; gap: 8px; margin-top: 10px; }
 .op-actions button { padding: 6px 12px; font-size: 13px; }
+.finds { list-style: none; padding: 0; margin: 10px 0 0; }
+.finds li { border-top: 1px solid var(--border); padding: 8px 0; }
+.finds label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.finds input { margin-top: 3px; }
+.finds .sub { word-break: break-all; }
+.tag { font-size: 11px; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--border); color: var(--muted); font-weight: 400; }

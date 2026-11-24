@@ -2,6 +2,7 @@
 //! Citirile sunt libere; orice schimbare trece prin `engine` (copie, jurnal, anulare).
 
 mod actions;
+mod cleaner;
 mod engine;
 mod journal;
 mod rules;
@@ -104,6 +105,30 @@ fn service_test_operation() -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Registru curat: scanare (doar citire).
+#[tauri::command(async)]
+fn registry_scan() -> Result<cleaner::ScanResult, String> {
+    cleaner::scan()
+}
+
+/// Registru curat: șterge intrările bifate. Rescanează și folosește doar ce e încă valabil,
+/// apoi trece totul prin motor (copie, jurnal, anulare).
+#[tauri::command(async)]
+fn registry_clean(ids: Vec<String>) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let scan = cleaner::scan()?;
+    let chosen: Vec<_> = scan.findings.into_iter().filter(|f| ids.contains(&f.id)).collect();
+    if chosen.is_empty() {
+        return Err("nicio intrare selectată nu mai este valabilă; rescanează".into());
+    }
+    let plan = Plan {
+        title: format!("Registru curat: {} intrări", chosen.len()),
+        rule_id: Some(format!("registry.{}", cleaner::RULES_ID)),
+        actions: chosen.into_iter().map(|f| f.action).collect(),
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 /// Starea Protecției sistemului pe C: (null = necunoscută fără administrator).
 #[tauri::command]
 fn protection_status() -> Option<bool> {
@@ -161,6 +186,8 @@ pub fn run() {
             safe_test_operation,
             protection_status,
             service_test_operation,
+            registry_scan,
+            registry_clean,
             enable_protection,
             open_folder
         ])

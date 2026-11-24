@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "version": "2026.11.24",
+  "kind": "registry",
+  "description": "Ce caută modulul Registru curat și ce nu se atinge niciodată.",
+  "categories": {
+    "uninstall_orphan": { "enabled": true, "title": "Intrări de dezinstalare rămase", "why": "Programul nu mai există pe disc, dar apare încă în lista de programe instalate." },
+    "run_missing": { "enabled": true, "title": "Porniri automate moarte", "why": "Windows încearcă la fiecare pornire să lanseze un program care nu mai există." },
+    "app_paths_missing": { "enabled": true, "title": "Scurtături de program (App Paths) moarte", "why": "Comanda „Run” trimite către un fișier care nu mai există." },
+    "shared_dll_missing": { "enabled": true, "title": "Contoare de biblioteci partajate moarte", "why": "Contor pentru o bibliotecă (DLL) care nu mai există pe disc." }
+  },
+  "never_touch": [
+    "\\windows defender",
+    "\\microsoft\\windows defender",
+    "\\windowsapps\\",
+    "\\system32\\drivers\\",
+    "securityhealth",
+    "onedrive"
+  ],
+  "never_touch_names": [
+    "SecurityHealth",
+    "WindowsDefender",
+    "OneDrive"
+  ]
+}
