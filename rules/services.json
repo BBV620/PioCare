@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "version": "2026.11.24",
+  "kind": "services",
+  "description": "Pachet de bază (exemplu de format). Nicio regulă nu se aplică automat în 0.1.",
+  "rules": [
+    {
+      "id": "svc.diagtrack",
+      "service": "DiagTrack",
+      "title": "Telemetrie Windows (Connected User Experiences and Telemetry)",
+      "proposal": "manual",
+      "risk": "low",
+      "profiles": ["acasa", "birou", "gaming"],
+      "why": "Trimite date de diagnostic către Microsoft; nu e necesar funcționării PC-ului."
+    },
+    {
+      "id": "svc.remoteregistry",
+      "service": "RemoteRegistry",
+      "title": "Registru la distanță",
+      "proposal": "disabled",
+      "risk": "low",
+      "profiles": ["acasa", "gaming"],
+      "why": "Permite modificarea registrului din rețea; risc de securitate pentru un PC de acasă."
+    },
+    {
+      "id": "svc.xbox",
+      "service": "XblGameSave",
+      "title": "Salvări Xbox Live",
+      "proposal": "manual",
+      "risk": "low",
+      "profiles": ["birou"],
+      "unless_used": ["Xbox", "Microsoft Store games"],
+      "why": "Util doar pentru jocurile Xbox / Microsoft Store."
+    }
+  ]
+}

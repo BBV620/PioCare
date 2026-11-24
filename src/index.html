@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PioCare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="side">
+    <div class="brand"><span class="logo">P</span> PioCare</div>
+    <nav>
+      <a class="active" href="#">Panou</a>
+      <a class="soon" href="#">Întreținere</a>
+      <a class="soon" href="#">Registru curat</a>
+      <a class="soon" href="#">Componente și servicii</a>
+      <a class="soon" href="#">Firewall</a>
+      <a class="soon" href="#">Jurnal și anulare</a>
+    </nav>
+    <div class="mode">Mod: doar citire</div>
+  </aside>
+
+  <main>
+    <header>
+      <h1>Starea sistemului</h1>
+      <button id="refresh">Reîmprospătează</button>
+    </header>
+
+    <section class="cards">
+      <div class="card"><h3>Windows</h3><p class="big" id="win">…</p><p class="sub" id="winver"></p></div>
+      <div class="card"><h3>Disc C:</h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
+      <div class="card"><h3>Programe instalate</h3><p class="big" id="apps">…</p><p class="sub">din registru (64 biți, 32 biți, utilizator)</p></div>
+      <div class="card"><h3>Pornit de</h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
+      <div class="card"><h3>Pachet de reguli</h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
+      <div class="card"><h3>Firewall</h3><p class="big muted">în curând</p><p class="sub">verificare prin API-ul oficial Windows Firewall</p></div>
+    </section>
+
+    <section class="modules">
+      <h2>Module</h2>
+      <div class="grid">
+        <div class="mod"><b>Întreținere generală</b><span>Temporare, cache-uri, componente Windows</span></div>
+        <div class="mod"><b>Registru curat</b><span>Resturi de la programe dezinstalate</span></div>
+        <div class="mod"><b>Componente și servicii</b><span>Graf de dependențe, profiluri Acasă / Birou / Gaming</span></div>
+        <div class="mod"><b>Firewall pentru siguranță</b><span>Politică restrictivă, programe noi care ies pe internet</span></div>
+      </div>
+      <p class="note">Nicio schimbare nu se face fără copie de siguranță și fără posibilitate de anulare.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

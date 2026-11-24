@@ -18,4 +18,18 @@ Scopul: calculatorul să revină la performanța lui reală, cu navigare mai sig
 
 Goal: bring the PC back to its real performance, with safer browsing.
 
-> Stadiu / Status: în pregătire — proiect abia început / early setup, no code yet.
+> Stadiu / Status: 0.1 — schelet, doar citire / skeleton, read-only.
+
+## Rulare / Run
+
+Cerințe: Rust, Node.js, WebView2 (inclus în Windows 10/11).
+
+```
+npm install
+npm run dev      # fereastra de dezvoltare
+npm run exe      # PioCare.exe în %LOCALAPPDATA%\PioCare-build\release
+```
+
+Folderul de build e pus intenționat pe C: (vezi `tools/tauri.cjs`): pe discul F: (exFAT) compilatorul Rust se oprește cu erori de acces.
+
+Arhitectura și etapele: [ARHITECTURA.md](ARHITECTURA.md).
