@@ -15,7 +15,7 @@ const RULES: &str = include_str!("../../rules/maintenance.json");
 #[derive(Deserialize, Clone)]
 struct Item {
     id: String,
-    title: String,
+    title: crate::i18n::Text,
     #[serde(default)]
     paths: Vec<String>,
     #[serde(default = "star")]
@@ -31,7 +31,7 @@ struct Item {
     #[serde(default)]
     requires_closed: Vec<String>,
     special: Option<String>,
-    why: String,
+    why: crate::i18n::Text,
 }
 
 fn star() -> String {
@@ -198,7 +198,11 @@ fn blocked_reason(item: &Item, procs: &[String]) -> Option<String> {
     if open.is_empty() {
         None
     } else {
-        Some(format!("închide întâi: {}", open.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")))
+        let list = open.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ");
+        Some(crate::i18n::t(
+            &format!("browserul rulează ({list}); închide-l complet, inclusiv din zona de lângă ceas (unele browsere, ca Edge, rămân pornite în fundal)"),
+            &format!("the browser is running ({list}); close it completely, including from the notification area (some browsers, like Edge, keep running in the background)"),
+        ))
     }
 }
 
@@ -219,8 +223,8 @@ pub fn scan() -> Result<Scan, String> {
     for it in &r.items {
         let mut si = ScanItem {
             id: it.id.clone(),
-            title: it.title.clone(),
-            why: it.why.clone(),
+            title: it.title.get(),
+            why: it.why.get(),
             risk: it.risk.clone(),
             admin: it.admin,
             default: it.default,
@@ -285,9 +289,9 @@ pub fn clean(ids: &[String]) -> Result<Vec<CleanResult>, String> {
     let procs = running_processes();
     let mut out = vec![];
     for it in r.items.iter().filter(|i| ids.contains(&i.id)) {
-        let mut res = CleanResult { id: it.id.clone(), title: it.title.clone(), files: 0, bytes: 0, skipped: 0, note: None };
+        let mut res = CleanResult { id: it.id.clone(), title: it.title.get(), files: 0, bytes: 0, skipped: 0, note: None };
         if let Some(why) = blocked_reason(it, &procs) {
-            res.note = Some(format!("sărit: {why}"));
+            res.note = Some(crate::i18n::t(&format!("sărit: {why}"), &format!("skipped: {why}")));
             out.push(res);
             continue;
         }
@@ -304,7 +308,7 @@ pub fn clean(ids: &[String]) -> Result<Vec<CleanResult>, String> {
                     }
                 }
                 if hr != 0 && before.map_or(false, |(n, _)| n > 0) {
-                    res.note = Some(format!("Windows a refuzat golirea (cod {hr:#x})"));
+                    res.note = Some(crate::i18n::t(&format!("Windows a refuzat golirea (cod {hr:#x})"), &format!("Windows refused to empty it (code {hr:#x})")));
                 }
             }
             Some("delivery_optimization") => {
@@ -312,14 +316,14 @@ pub fn clean(ids: &[String]) -> Result<Vec<CleanResult>, String> {
                     "powershell.exe",
                     &["-NoProfile", "-NonInteractive", "-Command", "$ErrorActionPreference='Stop'; Delete-DeliveryOptimizationCache -Force"],
                 ) {
-                    Ok(_) => res.note = Some("făcut".into()),
-                    Err(e) => res.note = Some(format!("eroare: {e}")),
+                    Ok(_) => res.note = Some(crate::i18n::t("făcut", "done")),
+                    Err(e) => res.note = Some(crate::i18n::t(&format!("eroare: {e}"), &format!("error: {e}"))),
                 }
             }
             Some("component_cleanup") => {
                 match crate::sys::run_hidden("Dism.exe", &["/Online", "/Cleanup-Image", "/StartComponentCleanup", "/Quiet"]) {
-                    Ok(_) => res.note = Some("făcut (DISM)".into()),
-                    Err(e) => res.note = Some(format!("eroare DISM: {e}")),
+                    Ok(_) => res.note = Some(crate::i18n::t("făcut (DISM)", "done (DISM)")),
+                    Err(e) => res.note = Some(crate::i18n::t(&format!("eroare DISM: {e}"), &format!("DISM error: {e}"))),
                 }
             }
             Some(other) => res.note = Some(format!("operație necunoscută: {other}")),
@@ -393,7 +397,7 @@ mod tests {
             default: true,
             requires_closed: vec![],
             special: None,
-            why: String::new(),
+            why: Default::default(),
         };
         let past = SystemTime::now() - Duration::from_secs(3600);
         let (f, _) = walk(&base, &item, past, &mut |_, _| true);

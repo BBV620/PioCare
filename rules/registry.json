@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "version": "2026.11.24",
+  "version": "2026.11.24.2",
   "kind": "registry",
   "description": "Ce caută modulul Registru curat și ce nu se atinge niciodată.",
   "categories": {
-    "uninstall_orphan": { "enabled": true, "title": "Intrări de dezinstalare rămase", "why": "Programul nu mai există pe disc, dar apare încă în lista de programe instalate." },
-    "run_missing": { "enabled": true, "title": "Porniri automate moarte", "why": "Windows încearcă la fiecare pornire să lanseze un program care nu mai există." },
-    "app_paths_missing": { "enabled": true, "title": "Scurtături de program (App Paths) moarte", "why": "Comanda „Run” trimite către un fișier care nu mai există." },
-    "shared_dll_missing": { "enabled": true, "title": "Contoare de biblioteci partajate moarte", "why": "Contor pentru o bibliotecă (DLL) care nu mai există pe disc." }
+    "uninstall_orphan": { "enabled": true, "title": { "ro": "Intrări de dezinstalare rămase", "en": "Leftover uninstall entries" }, "why": { "ro": "Programul nu mai există pe disc, dar apare încă în lista de programe instalate.", "en": "The program is no longer on disk but still shows in the installed programs list." } },
+    "run_missing": { "enabled": true, "title": { "ro": "Porniri automate moarte", "en": "Dead startup entries" }, "why": { "ro": "Windows încearcă la fiecare pornire să lanseze un program care nu mai există.", "en": "Windows tries at every startup to launch a program that no longer exists." } },
+    "app_paths_missing": { "enabled": true, "title": { "ro": "Scurtături de program (App Paths) moarte", "en": "Dead program shortcuts (App Paths)" }, "why": { "ro": "Comanda „Run” trimite către un fișier care nu mai există.", "en": "The “Run” command points to a file that no longer exists." } },
+    "shared_dll_missing": { "enabled": true, "title": { "ro": "Contoare de biblioteci partajate moarte", "en": "Dead shared library counters" }, "why": { "ro": "Contor pentru o bibliotecă (DLL) care nu mai există pe disc.", "en": "Counter for a library (DLL) that no longer exists on disk." } }
   },
   "never_touch": [
     "\\windows defender",

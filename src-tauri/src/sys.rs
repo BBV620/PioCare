@@ -76,13 +76,13 @@ if ($after -gt $before) { 'CREAT' } elseif ($w) { 'SARIT: ' + $w[0] } else { 'SA
         &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS],
         &[("PIOCARE_RP_DESC", &desc)],
     ) {
-        Ok(s) if s.starts_with("CREAT") => "punct de restaurare creat".into(),
+        Ok(s) if s.starts_with("CREAT") => crate::i18n::t("punct de restaurare creat", "restore point created"),
         // Limita Windows (SystemRestorePointCreationFrequency, implicit 24 h): există deja un punct recent.
         Ok(s) if s.starts_with("SARIT") => {
-            "punct de restaurare recent deja existent (Windows face cel mult unul la 24 de ore); copiile PioCare sunt făcute".into()
+            crate::i18n::t("punct de restaurare recent deja existent (Windows face cel mult unul la 24 de ore); copiile PioCare sunt făcute", "restore point: a recent one already exists (Windows makes at most one per 24 hours); PioCare backups are done")
         }
-        Ok(s) => format!("punct de restaurare necreat ({})", s.lines().last().unwrap_or("").trim()),
-        Err(e) => format!("punct de restaurare necreat ({e})"),
+        Ok(s) => crate::i18n::t(&format!("punct de restaurare necreat ({})", s.lines().last().unwrap_or("").trim()), &format!("restore point not created ({})", s.lines().last().unwrap_or("").trim())),
+        Err(e) => crate::i18n::t(&format!("punct de restaurare necreat ({e})"), &format!("restore point not created ({e})")),
     }
 }
 
@@ -125,7 +125,7 @@ pub fn set_protection_c(enabled: bool) -> Result<(), String> {
     )?;
     match protection_enabled_c() {
         Some(now) if now == enabled => Ok(()),
-        Some(_) => Err("Windows nu a schimbat starea Protecției sistemului".into()),
+        Some(_) => Err(crate::i18n::t("Windows nu a schimbat starea Protecției sistemului", "Windows did not change the System Protection state")),
         None => Ok(()),
     }
 }
@@ -171,13 +171,13 @@ pub fn run_self_elevated(args: &[String]) -> Result<u32, String> {
         };
         if ShellExecuteExW(&mut info) == 0 {
             return Err(if GetLastError() == 1223 {
-                "ai refuzat cererea de administrator; nu s-a schimbat nimic".into()
+                crate::i18n::t("ai refuzat cererea de administrator; nu s-a schimbat nimic", "you declined the administrator request; nothing was changed")
             } else {
-                format!("nu pot porni pasul de administrator: {}", std::io::Error::last_os_error())
+                crate::i18n::t(&format!("nu pot porni pasul de administrator: {}", std::io::Error::last_os_error()), &format!("cannot start the administrator step: {}", std::io::Error::last_os_error()))
             });
         }
         if info.hProcess.is_null() {
-            return Err("pasul de administrator nu a pornit".into());
+            return Err(crate::i18n::t("pasul de administrator nu a pornit", "the administrator step did not start"));
         }
         WaitForSingleObject(info.hProcess, INFINITE);
         let mut code = 1u32;

@@ -37,6 +37,8 @@ pub enum Outcome {
 struct Envelope {
     journal: PathBuf,
     request: Request,
+    #[serde(default)]
+    lang: Option<String>,
 }
 
 pub fn needs_admin(req: &Request, root: &Path) -> Result<bool, String> {
@@ -62,7 +64,7 @@ fn run_elevated(root: &Path, req: Request) -> Result<Operation, String> {
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let stamp = journal::now().to_string() + &std::process::id().to_string();
     let (rq, rs) = (dir.join(format!("{stamp}.req.json")), dir.join(format!("{stamp}.res.json")));
-    let env = Envelope { journal: root.to_path_buf(), request: req };
+    let env = Envelope { journal: root.to_path_buf(), request: req, lang: Some(crate::i18n::current().into()) };
     std::fs::write(&rq, serde_json::to_string(&env).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
     let res = sys::run_self_elevated(&[
         "--elevated".into(),
@@ -71,7 +73,7 @@ fn run_elevated(root: &Path, req: Request) -> Result<Operation, String> {
     ]);
     let _ = std::fs::remove_file(&rq);
     res?;
-    let text = std::fs::read_to_string(&rs).map_err(|_| "pasul de administrator nu a întors un rezultat".to_string())?;
+    let text = std::fs::read_to_string(&rs).map_err(|_| crate::i18n::t("pasul de administrator nu a întors un rezultat", "the administrator step returned no result"))?;
     let _ = std::fs::remove_file(&rs);
     match serde_json::from_str::<Outcome>(&text).map_err(|e| e.to_string())? {
         Outcome::Ok(op) => Ok(op),
@@ -85,7 +87,10 @@ pub fn elevated_main(req_file: &str, res_file: &str) -> i32 {
         .map_err(|e| e.to_string())
         .and_then(|s| serde_json::from_str::<Envelope>(&s).map_err(|e| e.to_string()))
     {
-        Ok(env) => match execute(&env.journal, env.request) {
+        Ok(env) => match {
+            crate::i18n::set(env.lang.as_deref().unwrap_or("ro"));
+            execute(&env.journal, env.request)
+        } {
             Ok(op) => Outcome::Ok(op),
             Err(e) => Outcome::Err(e),
         },
@@ -107,27 +112,27 @@ pub fn execute(root: &Path, req: Request) -> Result<Operation, String> {
 
 fn cleanup(root: &Path, ids: &[String]) -> Result<Operation, String> {
     if ids.is_empty() {
-        return Err("nicio categorie selectată".into());
+        return Err(crate::i18n::t("nicio categorie selectată", "no category selected"));
     }
     let admin = crate::maintenance::needs_admin(ids)?;
-    let mut op = Operation::new(root, OpKind::Cleanup, "Întreținere: curățare", Some("maintenance".into()), admin)?;
+    let mut op = Operation::new(root, OpKind::Cleanup, &crate::i18n::t("Întreținere: curățare", "Maintenance: cleanup"), Some("maintenance".into()), admin)?;
     op.save(root)?;
     let results = crate::maintenance::clean(ids)?;
     let (mut files, mut bytes) = (0u64, 0u64);
     for r in &results {
         files += r.files;
         bytes += r.bytes;
-        let mut line = format!("{}: {} fișiere, {:.1} MB", r.title, r.files, r.bytes as f64 / 1_048_576.0);
+        let mut line = crate::i18n::t(&format!("{}: {} fișiere, {:.1} MB", r.title, r.files, r.bytes as f64 / 1_048_576.0), &format!("{}: {} files, {:.1} MB", r.title, r.files, r.bytes as f64 / 1_048_576.0));
         if r.skipped > 0 {
-            line.push_str(&format!(" ({} în uz, sărite)", r.skipped));
+            line.push_str(&crate::i18n::t(&format!(" ({} în uz, sărite)", r.skipped), &format!(" ({} in use, skipped)", r.skipped)));
         }
         if let Some(n) = &r.note {
             line.push_str(&format!(" · {n}"));
         }
         op.notes.push(line);
     }
-    op.title = format!("Întreținere: {:.1} MB eliberați ({} fișiere)", bytes as f64 / 1_048_576.0, files);
-    op.notes.push("Curățarea nu se poate anula: sunt fișiere temporare și cache-uri, refăcute automat la nevoie.".into());
+    op.title = crate::i18n::t(&format!("Întreținere: {:.1} MB eliberați ({} fișiere)", bytes as f64 / 1_048_576.0, files), &format!("Maintenance: {:.1} MB freed ({} files)", bytes as f64 / 1_048_576.0, files));
+    op.notes.push(crate::i18n::t("Curățarea nu se poate anula: sunt fișiere temporare și cache-uri, refăcute automat la nevoie.", "Cleanup cannot be undone: these are temporary files and caches, recreated automatically when needed."));
     op.status = OpStatus::CleanupDone;
     op.save(root)?;
     Ok(op)
@@ -135,7 +140,7 @@ fn cleanup(root: &Path, ids: &[String]) -> Result<Operation, String> {
 
 fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
     if plan.actions.is_empty() {
-        return Err("planul nu are nicio acțiune".into());
+        return Err(crate::i18n::t("planul nu are nicio acțiune", "the plan has no actions"));
     }
     let admin = plan.actions.iter().any(|a| a.needs_admin());
     let mut op = Operation::new(root, OpKind::Change, &plan.title, plan.rule_id.clone(), admin)?;
@@ -160,7 +165,7 @@ fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
                 op.steps[i].state = StepState::Failed;
                 op.steps[i].error = Some(e.clone());
                 op.status = OpStatus::Failed;
-                op.notes.push("Copia de siguranță a eșuat; nu s-a schimbat nimic.".into());
+                op.notes.push(crate::i18n::t("Copia de siguranță a eșuat; nu s-a schimbat nimic.", "The backup failed; nothing was changed."));
                 op.save(root)?;
                 return Ok(op);
             }
@@ -174,7 +179,7 @@ fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
             Ok(()) => op.files.push("firewall-inainte.wfw".into()),
             Err(e) => {
                 op.status = OpStatus::Failed;
-                op.notes.push(format!("Exportul firewall-ului a eșuat ({e}); nu s-a schimbat nimic."));
+                op.notes.push(crate::i18n::t(&format!("Exportul firewall-ului a eșuat ({e}); nu s-a schimbat nimic."), &format!("The firewall export failed ({e}); nothing was changed.")));
                 op.save(root)?;
                 return Ok(op);
             }
@@ -198,7 +203,7 @@ fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
                 op.save(root)?;
                 rollback(&mut op, &dir, i);
                 op.status = OpStatus::RolledBack;
-                op.notes.push("Un pas a eșuat; pașii aplicați au fost readuși automat.".into());
+                op.notes.push(crate::i18n::t("Un pas a eșuat; pașii aplicați au fost readuși automat.", "A step failed; the steps already applied were rolled back automatically."));
                 op.save(root)?;
                 return Ok(op);
             }
@@ -238,10 +243,10 @@ fn rollback(op: &mut Operation, dir: &Path, upto: usize) -> bool {
 fn undo(root: &Path, id: &str) -> Result<Operation, String> {
     let mut op = journal::load(root, id)?;
     if op.kind != OpKind::Change {
-        return Err("o copie de siguranță nu se anulează".into());
+        return Err(crate::i18n::t("această operație nu se anulează", "this operation cannot be undone"));
     }
     if !matches!(op.status, OpStatus::Applied | OpStatus::PartiallyUndone) {
-        return Err("operația nu este în starea „aplicată”".into());
+        return Err(crate::i18n::t("operația nu este în starea „aplicată”", "the operation is not in the applied state"));
     }
     // Pașii care au eșuat la o anulare anterioară se reîncearcă.
     for s in op.steps.iter_mut() {
@@ -259,7 +264,7 @@ fn undo(root: &Path, id: &str) -> Result<Operation, String> {
 }
 
 fn full_backup(root: &Path) -> Result<Operation, String> {
-    let mut op = Operation::new(root, OpKind::Backup, "Copie de siguranță completă", None, true)?;
+    let mut op = Operation::new(root, OpKind::Backup, &crate::i18n::t("Copie de siguranță completă", "Full backup"), None, true)?;
     let dir = op.dir(root);
     op.restore_point = Some(sys::restore_point("copie completa"));
     op.save(root)?;
@@ -272,7 +277,7 @@ fn full_backup(root: &Path) -> Result<Operation, String> {
         &["export", "HKLM\\SYSTEM\\CurrentControlSet\\Services", &dir.join("servicii.reg").to_string_lossy(), "/y"],
     ) {
         Ok(_) => op.files.push("servicii.reg".into()),
-        Err(e) => op.notes.push(format!("Servicii: {e}")),
+        Err(e) => op.notes.push(crate::i18n::t(&format!("Servicii: {e}"), &format!("Services: {e}"))),
     }
     op.status = if op.files.is_empty() { OpStatus::Failed } else { OpStatus::BackupDone };
     op.save(root)?;

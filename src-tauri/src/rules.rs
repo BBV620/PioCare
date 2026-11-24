@@ -28,7 +28,7 @@ pub struct RulesInfo {
 pub fn info() -> RulesInfo {
     match serde_json::from_str::<Pack>(BUILTIN_SERVICES) {
         Ok(p) => RulesInfo {
-            source: "inclus în aplicație".into(),
+            source: crate::i18n::t("inclus în aplicație", "built into the app"),
             version: p.version,
             schema_version: p.schema_version,
             supported_schema: SUPPORTED_SCHEMA,

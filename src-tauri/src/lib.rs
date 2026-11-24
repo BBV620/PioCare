@@ -5,6 +5,7 @@ mod actions;
 mod cleaner;
 mod engine;
 mod firewall;
+mod i18n;
 mod journal;
 mod maintenance;
 mod rules;
@@ -80,7 +81,7 @@ fn safe_test_operation() -> Result<OpView, String> {
     let root = journal::default_root()?;
     let key = "Software\\PioCare\\Proba".to_string();
     let plan = Plan {
-        title: "Probă sigură (registrul utilizatorului)".into(),
+        title: crate::i18n::t("Probă sigură (registrul utilizatorului)", "Safe test (user registry)"),
         rule_id: Some("test.proba".into()),
         actions: vec![
             ActionSpec::RegSetValue { root: Root::HKCU, path: key.clone(), name: "Activ".into(), value: RegData::dword(1) },
@@ -101,7 +102,7 @@ fn safe_test_operation() -> Result<OpView, String> {
 fn service_test_operation() -> Result<OpView, String> {
     let root = journal::default_root()?;
     let plan = Plan {
-        title: "Probă serviciu: Windows Search pe pornire manuală".into(),
+        title: crate::i18n::t("Probă serviciu: Windows Search pe pornire manuală", "Service test: Windows Search set to manual"),
         rule_id: Some("test.serviciu".into()),
         actions: vec![ActionSpec::ServiceStartType { name: "WSearch".into(), start: actions::StartType::Manual }],
     };
@@ -122,10 +123,10 @@ fn registry_clean(ids: Vec<String>) -> Result<OpView, String> {
     let scan = cleaner::scan()?;
     let chosen: Vec<_> = scan.findings.into_iter().filter(|f| ids.contains(&f.id)).collect();
     if chosen.is_empty() {
-        return Err("nicio intrare selectată nu mai este valabilă; rescanează".into());
+        return Err(crate::i18n::t("nicio intrare selectată nu mai este valabilă; rescanează", "none of the selected entries is still valid; scan again"));
     }
     let plan = Plan {
-        title: format!("Registru curat: {} intrări", chosen.len()),
+        title: crate::i18n::t(&format!("Registru curat: {} intrări", chosen.len()), &format!("Registry cleanup: {} entries", chosen.len())),
         rule_id: Some(format!("registry.{}", cleaner::RULES_ID)),
         actions: chosen.into_iter().map(|f| f.action).collect(),
     };
@@ -151,10 +152,10 @@ fn services_apply(profile: String, uses: Vec<String>, names: Vec<String>) -> Res
     let a = services::analyze(&profile, &uses)?;
     let chosen: Vec<_> = a.proposals.into_iter().filter(|p| names.contains(&p.service)).collect();
     if chosen.is_empty() {
-        return Err("nicio propunere selectată nu mai este valabilă; analizează din nou".into());
+        return Err(crate::i18n::t("nicio propunere selectată nu mai este valabilă; analizează din nou", "none of the selected proposals is still valid; analyze again"));
     }
     let plan = Plan {
-        title: format!("Servicii, profil {profile}: {} schimbări", chosen.len()),
+        title: crate::i18n::t(&format!("Servicii, profil {profile}: {} schimbări", chosen.len()), &format!("Services, {profile} profile: {} changes", chosen.len())),
         rule_id: Some(format!("services.{profile}")),
         actions: services::to_actions(&chosen),
     };
@@ -174,10 +175,10 @@ fn firewall_apply(uses: Vec<String>, ids: Vec<String>) -> Result<OpView, String>
     let st = firewall::status(&uses)?;
     let chosen: Vec<_> = st.proposals.into_iter().filter(|p| ids.contains(&p.id)).collect();
     if chosen.is_empty() {
-        return Err("nicio propunere selectată nu mai este valabilă; reîmprospătează".into());
+        return Err(crate::i18n::t("nicio propunere selectată nu mai este valabilă; reîmprospătează", "none of the selected proposals is still valid; refresh"));
     }
     let plan = Plan {
-        title: format!("Firewall: {} reguli de siguranță", chosen.len()),
+        title: crate::i18n::t(&format!("Firewall: {} reguli de siguranță", chosen.len()), &format!("Firewall: {} safety rules", chosen.len())),
         rule_id: Some("firewall.policy".into()),
         actions: firewall::proposals_to_actions(&chosen),
     };
@@ -201,6 +202,23 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
         actions: vec![ActionSpec::FirewallBlock(rule)],
     };
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
+#[derive(serde::Serialize)]
+struct LangInfo {
+    /// null = nealeasă încă (se întreabă la prima pornire)
+    lang: Option<String>,
+    suggestion: &'static str,
+}
+
+#[tauri::command]
+fn get_language() -> LangInfo {
+    LangInfo { lang: i18n::load().lang, suggestion: i18n::system_suggestion() }
+}
+
+#[tauri::command]
+fn set_language(lang: String) -> Result<(), String> {
+    i18n::save_lang(&lang)
 }
 
 /// Întreținere: cât se poate elibera (doar citire).
@@ -227,7 +245,7 @@ fn protection_status() -> Option<bool> {
 fn enable_protection() -> Result<OpView, String> {
     let root = journal::default_root()?;
     let plan = Plan {
-        title: "Pornire Protecția sistemului (puncte de restaurare) pe C:".into(),
+        title: crate::i18n::t("Pornire Protecția sistemului (puncte de restaurare) pe C:", "Turn on System Protection (restore points) on C:"),
         rule_id: Some("sys.restore.enable".into()),
         actions: vec![ActionSpec::SystemProtection { enabled: true }],
     };
@@ -250,6 +268,7 @@ pub fn elevated_main(req: &str, res: &str) -> i32 {
 }
 
 pub fn run() {
+    i18n::load();
     tauri::Builder::default()
         .setup(|app| {
             #[cfg(windows)]
@@ -278,6 +297,8 @@ pub fn run() {
             services_list,
             services_analyze,
             services_apply,
+            get_language,
+            set_language,
             maintenance_scan,
             maintenance_clean,
             firewall_status,

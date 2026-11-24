@@ -15,8 +15,8 @@ pub const RULES_ID: &str = "clean";
 #[derive(Deserialize)]
 struct Category {
     enabled: bool,
-    title: String,
-    why: String,
+    title: crate::i18n::Text,
+    why: crate::i18n::Text,
 }
 
 #[derive(Deserialize)]
@@ -176,7 +176,7 @@ pub fn scan() -> Result<ScanResult, String> {
 
     let r = rules()?;
     let on = |c: &str| r.categories.get(c).map_or(false, |x| x.enabled);
-    let cat = |c: &str| r.categories.get(c).map(|x| (x.title.clone(), x.why.clone())).unwrap_or_default();
+    let cat = |c: &str| r.categories.get(c).map(|x| (x.title.get(), x.why.get())).unwrap_or_default();
     let hk = |root: Root| RegKey::predef(if root == Root::HKCU { HKEY_CURRENT_USER } else { HKEY_LOCAL_MACHINE });
     let mut out: Vec<Finding> = vec![];
     let mut scanned = 0usize;

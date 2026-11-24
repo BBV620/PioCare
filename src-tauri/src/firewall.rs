@@ -55,7 +55,7 @@ impl FwRule {
         }
         if self.program.is_none() && self.local_ports.is_none() {
             // O regulă fără program și fără porturi ar bloca TOT traficul într-o direcție.
-            return Err("regula ar bloca tot traficul; refuz".into());
+            return Err(crate::i18n::t("regula ar bloca tot traficul; refuz", "the rule would block all traffic; refused"));
         }
         if self.display.contains('"') || self.profiles.contains('"') {
             return Err("text invalid".into());
@@ -106,12 +106,12 @@ pub fn add_rule(r: &FwRule) -> Result<(), String> {
             ("PC_PROG", r.program.as_deref().unwrap_or("")),
         ],
     )?;
-    if rule_exists(&r.name) { Ok(()) } else { Err(format!("regula {} nu a apărut în firewall", r.name)) }
+    if rule_exists(&r.name) { Ok(()) } else { Err(crate::i18n::t(&format!("regula {} nu a apărut în firewall", r.name), &format!("rule {} did not appear in the firewall", r.name))) }
 }
 
 pub fn remove_rule(name: &str) -> Result<(), String> {
     if !name.starts_with("PioCare-") {
-        return Err("PioCare scoate doar regulile create de el".into());
+        return Err(crate::i18n::t("PioCare scoate doar regulile create de el", "PioCare only removes its own rules"));
     }
     if !rule_exists(name) {
         return Ok(());
@@ -185,7 +185,7 @@ pub fn rule_exists(name: &str) -> bool {
 #[derive(Deserialize)]
 struct RuleDef {
     id: String,
-    display: String,
+    display: crate::i18n::Text,
     direction: String,
     protocol: Option<String>,
     local_ports: Option<String>,
@@ -194,21 +194,21 @@ struct RuleDef {
     #[serde(default)]
     needed_for: Vec<String>,
     risk: String,
-    why: String,
+    why: crate::i18n::Text,
 }
 
 #[derive(Deserialize)]
 struct ProfileDef {
     id: String,
     profile: String,
-    why: String,
+    why: crate::i18n::Text,
 }
 
 #[derive(Deserialize)]
 struct Rules {
     schema_version: u32,
     version: String,
-    features: BTreeMap<String, String>,
+    features: BTreeMap<String, crate::i18n::Text>,
     profiles: Vec<ProfileDef>,
     rules: Vec<RuleDef>,
 }
@@ -256,12 +256,12 @@ pub fn status(uses: &[String]) -> Result<FwStatus, String> {
         if !st.enabled || st.inbound == "Allow" {
             proposals.push(FwProposal {
                 id: p.id.clone(),
-                title: format!("Pornește firewall-ul pentru rețele {}", match p.profile.as_str() {
-                    "Public" => "publice",
-                    "Private" => "private (acasă)",
-                    _ => "de firmă",
-                }),
-                why: p.why.clone(),
+                title: match p.profile.as_str() {
+                    "Public" => crate::i18n::t("Pornește firewall-ul pentru rețele publice", "Turn on the firewall for public networks"),
+                    "Private" => crate::i18n::t("Pornește firewall-ul pentru rețeaua de acasă", "Turn on the firewall for the home network"),
+                    _ => crate::i18n::t("Pornește firewall-ul pentru rețeaua de firmă", "Turn on the firewall for the work network"),
+                },
+                why: p.why.get(),
                 risk: "low".into(),
                 action: ActionSpec::FirewallProfileOn { profile: p.profile.clone() },
             });
@@ -284,7 +284,7 @@ pub fn status(uses: &[String]) -> Result<FwStatus, String> {
         }
         let rule = FwRule {
             name,
-            display: d.display.clone(),
+            display: d.display.get(),
             direction: d.direction.clone(),
             protocol: d.protocol.clone(),
             local_ports: d.local_ports.clone(),
@@ -296,8 +296,8 @@ pub fn status(uses: &[String]) -> Result<FwStatus, String> {
         }
         proposals.push(FwProposal {
             id: d.id.clone(),
-            title: d.display.clone(),
-            why: d.why.clone(),
+            title: d.display.get(),
+            why: d.why.get(),
             risk: d.risk.clone(),
             action: ActionSpec::FirewallBlock(rule),
         });
@@ -306,7 +306,7 @@ pub fn status(uses: &[String]) -> Result<FwStatus, String> {
     piocare_rules.sort();
     Ok(FwStatus {
         rules_version: r.version,
-        features: r.features,
+        features: r.features.iter().map(|(k, v)| (k.clone(), v.get())).collect(),
         profiles,
         total_rules: names.len(),
         piocare_rules,
@@ -408,18 +408,18 @@ ConvertTo-Json -InputObject $out -Depth 3 -Compress
 pub fn block_program_rule(path: &str) -> Result<FwRule, String> {
     let p = PathBuf::from(path);
     if !p.is_file() {
-        return Err("programul nu există pe disc".into());
+        return Err(crate::i18n::t("programul nu există pe disc", "the program does not exist on disk"));
     }
     let lower = path.to_lowercase();
     let windir = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".into()).to_lowercase();
     // Componentele Windows de bază nu se blochează din acest buton (ar putea tăia actualizările sau rețeaua).
     if lower.starts_with(&format!("{windir}\\system32\\svchost.exe")) || lower.ends_with("\\lsass.exe") || lower.ends_with("\\system") {
-        return Err("acest proces Windows nu poate fi blocat din PioCare".into());
+        return Err(crate::i18n::t("acest proces Windows nu poate fi blocat din PioCare", "this Windows process cannot be blocked from PioCare"));
     }
     let file = p.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
     let rule = FwRule {
         name: block_name_for(path),
-        display: format!("Ieșire pe internet: {file}"),
+        display: crate::i18n::t(&format!("Ieșire pe internet: {file}"), &format!("Internet access: {file}")),
         direction: "out".into(),
         protocol: None,
         local_ports: None,
@@ -448,7 +448,7 @@ mod tests {
             }
             let rule = FwRule {
                 name: format!("PioCare-{}", d.id),
-                display: d.display.clone(),
+                display: d.display.get(),
                 direction: d.direction.clone(),
                 protocol: d.protocol.clone(),
                 local_ports: d.local_ports.clone(),

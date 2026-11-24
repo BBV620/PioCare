@@ -82,15 +82,15 @@ impl ActionSpec {
     /// Text scurt, în română, pentru interfață.
     pub fn describe(&self) -> String {
         match self {
-            ActionSpec::RegSetValue { root, path, name, .. } => format!("Setează {root:?}\\{path} → {name}"),
-            ActionSpec::RegDeleteValue { root, path, name } => format!("Șterge valoarea {root:?}\\{path} → {name}"),
-            ActionSpec::RegDeleteKey { root, path } => format!("Șterge cheia {root:?}\\{path}"),
-            ActionSpec::ServiceStartType { name, start } => format!("Serviciul {name}: pornire {start:?}"),
+            ActionSpec::RegSetValue { root, path, name, .. } => crate::i18n::t(&format!("Setează {root:?}\\{path} → {name}"), &format!("Set {root:?}\\{path} → {name}")),
+            ActionSpec::RegDeleteValue { root, path, name } => crate::i18n::t(&format!("Șterge valoarea {root:?}\\{path} → {name}"), &format!("Delete value {root:?}\\{path} → {name}")),
+            ActionSpec::RegDeleteKey { root, path } => crate::i18n::t(&format!("Șterge cheia {root:?}\\{path}"), &format!("Delete key {root:?}\\{path}")),
+            ActionSpec::ServiceStartType { name, start } => crate::i18n::t(&format!("Serviciul {name}: pornire {start:?}"), &format!("Service {name}: startup {start:?}")),
             ActionSpec::SystemProtection { enabled } => {
-                format!("Protecția sistemului pe C: {}", if *enabled { "pornită" } else { "oprită" })
+                if *enabled { crate::i18n::t("Protecția sistemului pe C: pornită", "System Protection on C: turned on") } else { crate::i18n::t("Protecția sistemului pe C: oprită", "System Protection on C: turned off") }
             }
-            ActionSpec::FirewallBlock(r) => format!("Firewall: blochează {}", r.display),
-            ActionSpec::FirewallProfileOn { profile } => format!("Firewall: profilul {profile} pornit, intrări blocate"),
+            ActionSpec::FirewallBlock(r) => crate::i18n::t(&format!("Firewall: blochează {}", r.display), &format!("Firewall: block {}", r.display)),
+            ActionSpec::FirewallProfileOn { profile } => crate::i18n::t(&format!("Firewall: profilul {profile} pornit, intrări blocate"), &format!("Firewall: {profile} profile on, inbound blocked")),
         }
     }
 }
@@ -111,7 +111,7 @@ fn check_path(path: &str) -> Result<(), String> {
     let p = path.trim_matches('\\');
     let depth = p.split('\\').filter(|s| !s.is_empty()).count();
     if p.is_empty() || depth < 2 || p.contains("..") {
-        return Err(format!("cale de registru refuzată (prea generală): {path}"));
+        return Err(crate::i18n::t(&format!("cale de registru refuzată (prea generală): {path}"), &format!("registry path refused (too broad): {path}")));
     }
     Ok(())
 }
@@ -207,11 +207,11 @@ mod win {
             return Err("nume de serviciu invalid".into());
         }
         if crate::services::is_critical(name) {
-            return Err(format!("{name} este un serviciu vital al Windows; PioCare nu îl schimbă"));
+            return Err(crate::i18n::t(&format!("{name} este un serviciu vital al Windows; PioCare nu îl schimbă"), &format!("{name} is a vital Windows service; PioCare never changes it")));
         }
         let k = RegKey::predef(HKEY_LOCAL_MACHINE)
             .open_subkey(svc_key(name))
-            .map_err(|_| format!("serviciul {name} nu există"))?;
+            .map_err(|_| crate::i18n::t(&format!("serviciul {name} nu există"), &format!("service {name} does not exist")))?;
         let start: u32 = k.get_value("Start").map_err(|e| format!("{name}: {e}"))?;
         let delayed: u32 = k.get_value("DelayedAutostart").unwrap_or(0);
         Ok(match start {
@@ -220,7 +220,7 @@ mod win {
             3 => StartType::Manual,
             4 => StartType::Disabled,
             // 0 = boot, 1 = system: drivere. PioCare nu le atinge niciodată.
-            _ => return Err(format!("{name} este driver (Start={start}); refuz")),
+            _ => return Err(crate::i18n::t(&format!("{name} este driver (Start={start}); refuz"), &format!("{name} is a driver (Start={start}); refused"))),
         })
     }
 
@@ -283,7 +283,7 @@ mod win {
                 let full = op_dir.join(&file);
                 run_hidden("reg.exe", &["export", &reg_path(*root, path), &full.to_string_lossy(), "/y"])?;
                 if !full.exists() {
-                    return Err("exportul cheii nu a produs fișierul de copie".into());
+                    return Err(crate::i18n::t("exportul cheii nu a produs fișierul de copie", "the key export did not produce the backup file"));
                 }
                 Ok(Before::KeyExport { file: Some(file) })
             }

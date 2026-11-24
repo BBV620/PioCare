@@ -97,8 +97,8 @@ PioCare/
 | 0.3 ✓ | Registru curat: dezinstalări orfane, porniri automate moarte, App Paths, SharedDLLs; ștergere prin jurnal. Testat în VM: scanare → curățare → anulare. |
 | 0.4 ✓ | Servicii: hartă cu dependențe în ambele sensuri, profiluri Acasă/Birou/Gaming, „ce folosești”, oprire doar fără dependenți activi, listă de servicii vitale neatinse. Testat în VM: aplicare 31 schimbări → anulare. |
 | 0.5 ✓ | Firewall: 10 porți de intrare riscante + 12 unelte Windows abuzate de viruși blocate (doar reguli „PioCare-*”), export înainte, programe noi care ies pe internet + blocare. Testat în VM: 20 reguli aplicate, navigarea merge, anulare exactă (430→410). |
-| 0.6 | Întreținere generală: 16 categorii (temporare, cache-uri browsere, rapoarte de erori, Windows Update, Coș, Delivery Optimization, DISM); fără legături, fișierele în uz sărite, browserele doar închise. |
-| 0.7 | Limbi: română + engleză, alegerea limbii la prima pornire (și în instalator), schimbabilă oricând; textele în fișiere separate, ca să se poată adăuga alte limbi (ca la PioCut). |
+| 0.6 ✓ | Întreținere generală: 16 categorii (temporare, cache-uri browsere, rapoarte de erori, Windows Update, Coș, Delivery Optimization, DISM); fără legături, fișierele în uz sărite, browserele doar închise. |
+| 0.7 ✓ | Limbi: română + engleză (interfață `src/i18n/*.js`, motor `i18n::t`, pachete de reguli cu texte `{ro, en}`), alegerea limbii la prima pornire (și în instalator), schimbabilă oricând; textele în fișiere separate, ca să se poată adăuga alte limbi (ca la PioCut). |
 | 0.8 | „Ce este?” pentru fiecare serviciu, proces, regulă și program din listele PioCare: ce face, dacă e sigur de oprit, ce se strică. Explicațiile stau în pachetele de reguli (RO/EN), deci se actualizează odată cu ele. |
 | 0.9 | Dezinstalator încorporat: lista programelor → dezinstalatorul oficial al programului → scanare imediată a resturilor (registru, foldere, scurtături, porniri automate, servicii) → ștergere doar cu copie și anulare → starea sistemului după. Componentele comune/sistem nu se ating. |
 | 0.10 | Pachete de reguli semnate și actualizare separată. |

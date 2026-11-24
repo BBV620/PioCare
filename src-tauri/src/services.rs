@@ -37,14 +37,14 @@ struct Rule {
     profiles: Vec<String>,
     #[serde(default)]
     needed_for: Vec<String>,
-    why: String,
+    why: crate::i18n::Text,
 }
 
 #[derive(Deserialize)]
 struct Rules {
     schema_version: u32,
     version: String,
-    features: BTreeMap<String, String>,
+    features: BTreeMap<String, crate::i18n::Text>,
     rules: Vec<Rule>,
 }
 
@@ -272,7 +272,7 @@ pub fn analyze(profile: &str, uses: &[String]) -> Result<Analysis, String> {
     for ru in applicable {
         let Some(s) = by.get(&ru.service.to_lowercase()) else { continue };
         if s.critical || is_critical(&ru.service) {
-            skipped.push(format!("{}: serviciu vital, nu se atinge", s.display));
+            skipped.push(crate::i18n::t(&format!("{}: serviciu vital, nu se atinge", s.display), &format!("{}: vital service, not touched", s.display)));
             continue;
         }
         if s.user_instance || rank(&s.start) == 0 {
@@ -291,7 +291,7 @@ pub fn analyze(profile: &str, uses: &[String]) -> Result<Analysis, String> {
             if !blockers.is_empty() {
                 let names: Vec<String> = blockers.iter().map(|b| by.get(&b.to_lowercase()).map_or(b.clone(), |x| x.display.clone())).collect();
                 proposed = StartType::Manual;
-                note = Some(format!("Rămâne pe manual (nu oprit), pentru că depind de el: {}", names.join(", ")));
+                note = Some(crate::i18n::t(&format!("Rămâne pe manual (nu oprit), pentru că depind de el: {}", names.join(", ")), &format!("Stays on manual (not disabled) because these depend on it: {}", names.join(", "))));
             }
         }
         if rank(&s.start) <= rank(start_str(proposed)) {
@@ -304,7 +304,7 @@ pub fn analyze(profile: &str, uses: &[String]) -> Result<Analysis, String> {
             current: s.start.clone(),
             proposed,
             risk: ru.risk.clone(),
-            why: ru.why.clone(),
+            why: ru.why.get(),
             rule_id: ru.id.clone(),
             note,
             needed_for: ru.needed_for.clone(),
@@ -313,7 +313,7 @@ pub fn analyze(profile: &str, uses: &[String]) -> Result<Analysis, String> {
     props.sort_by(|a, b| a.risk.cmp(&b.risk).then(a.display.to_lowercase().cmp(&b.display.to_lowercase())));
     Ok(Analysis {
         rules_version: r.version,
-        features: r.features,
+        features: r.features.iter().map(|(k, v)| (k.clone(), v.get())).collect(),
         total_services: all.iter().filter(|s| !s.user_instance).count(),
         running_services: all.iter().filter(|s| s.running).count(),
         proposals: props,

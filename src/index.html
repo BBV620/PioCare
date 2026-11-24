@@ -7,146 +7,164 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Alegerea limbii la prima pornire / Language choice on first start -->
+  <div id="lang-pick" class="overlay hidden">
+    <div class="dialog">
+      <div class="brand dark"><span class="logo">P</span> PioCare</div>
+      <h2 id="lang-pick-title">Alege limba · Choose your language</h2>
+      <div class="lang-buttons">
+        <button data-lang="ro">Română</button>
+        <button data-lang="en">English</button>
+      </div>
+      <p class="sub" id="lang-pick-sub">Poți schimba oricând din meniu. · You can change it any time from the menu.</p>
+    </div>
+  </div>
+
   <aside class="side">
     <div class="brand"><span class="logo">P</span> PioCare</div>
     <nav>
-      <a class="active" href="#panou" data-page="panou">Panou</a>
-      <a href="#intretinere" data-page="intretinere">Întreținere</a>
-      <a href="#registru" data-page="registru">Registru curat</a>
-      <a href="#servicii" data-page="servicii">Componente și servicii</a>
-      <a href="#firewall" data-page="firewall">Firewall</a>
-      <a href="#jurnal" data-page="jurnal">Jurnal și anulare</a>
+      <a class="active" href="#panou" data-page="panou" data-i18n="nav.panou"></a>
+      <a href="#intretinere" data-page="intretinere" data-i18n="nav.intretinere"></a>
+      <a href="#registru" data-page="registru" data-i18n="nav.registru"></a>
+      <a href="#servicii" data-page="servicii" data-i18n="nav.servicii"></a>
+      <a href="#firewall" data-page="firewall" data-i18n="nav.firewall"></a>
+      <a href="#jurnal" data-page="jurnal" data-i18n="nav.jurnal"></a>
     </nav>
-    <div class="mode" id="mode">Mod: utilizator</div>
+    <div class="side-bottom">
+      <select id="lang-select" aria-label="Language"></select>
+      <div class="mode" id="mode"></div>
+    </div>
   </aside>
 
   <main>
     <div class="page" id="page-panou">
       <header>
-        <h1>Starea sistemului</h1>
-        <button id="refresh">Reîmprospătează</button>
+        <h1 data-i18n="panou.title"></h1>
+        <button id="refresh" data-i18n="common.refresh"></button>
       </header>
 
       <section class="cards">
         <div class="card"><h3>Windows</h3><p class="big" id="win">…</p><p class="sub" id="winver"></p></div>
-        <div class="card"><h3>Disc C:</h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
-        <div class="card"><h3>Programe instalate</h3><p class="big" id="apps">…</p><p class="sub">din registru (64 biți, 32 biți, utilizator)</p></div>
-        <div class="card"><h3>Pornit de</h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
-        <div class="card"><h3>Pachet de reguli</h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
-        <div class="card"><h3>Ultima copie completă</h3><p class="big" id="lastbackup">…</p><p class="sub" id="lastbackupsub"></p></div>
+        <div class="card"><h3 data-i18n="panou.disk"></h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
+        <div class="card"><h3 data-i18n="panou.apps"></h3><p class="big" id="apps">…</p><p class="sub" data-i18n="panou.appsSub"></p></div>
+        <div class="card"><h3 data-i18n="panou.uptime"></h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
+        <div class="card"><h3 data-i18n="panou.rules"></h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
+        <div class="card"><h3 data-i18n="panou.lastBackup"></h3><p class="big" id="lastbackup">…</p><p class="sub" id="lastbackupsub"></p></div>
       </section>
 
       <section class="modules">
-        <h2>Module</h2>
+        <h2 data-i18n="panou.modules"></h2>
         <div class="grid">
-          <div class="mod"><b>Întreținere generală</b><span>Temporare, cache-uri, componente Windows</span></div>
-          <div class="mod"><b>Registru curat</b><span>Resturi de la programe dezinstalate</span></div>
-          <div class="mod"><b>Componente și servicii</b><span>Graf de dependențe, profiluri Acasă / Birou / Gaming</span></div>
-          <div class="mod"><b>Firewall pentru siguranță</b><span>Politică restrictivă, programe noi care ies pe internet</span></div>
+          <div class="mod"><b data-i18n="panou.mod.mt"></b><span data-i18n="panou.mod.mt.sub"></span></div>
+          <div class="mod"><b data-i18n="panou.mod.reg"></b><span data-i18n="panou.mod.reg.sub"></span></div>
+          <div class="mod"><b data-i18n="panou.mod.svc"></b><span data-i18n="panou.mod.svc.sub"></span></div>
+          <div class="mod"><b data-i18n="panou.mod.fw"></b><span data-i18n="panou.mod.fw.sub"></span></div>
         </div>
-        <p class="note">Nicio schimbare nu se face fără copie de siguranță și fără posibilitate de anulare.</p>
+        <p class="note" data-i18n="panou.note"></p>
       </section>
     </div>
 
     <div class="page hidden" id="page-intretinere">
       <header>
-        <h1>Întreținere generală</h1>
+        <h1 data-i18n="mt.title"></h1>
         <div class="actions">
-          <button class="ghost" id="btn-mt-scan">Scanează</button>
-          <button id="btn-mt-clean" disabled>Curăță selectate</button>
+          <button class="ghost" id="btn-mt-scan" data-i18n="common.scan"></button>
+          <button id="btn-mt-clean" disabled data-i18n="common.clean"></button>
         </div>
       </header>
-      <p class="lead">Fișiere temporare, cache-uri și rapoarte de erori: lucruri pe care Windows și programele le refac singure. Documentele, pozele, parolele și istoricul browserelor nu sunt atinse. Curățarea nu se poate anula, dar nici nu e nevoie: nu se pierde nimic personal.</p>
+      <p class="lead" data-i18n="mt.lead"></p>
       <div id="mt-status" class="status hidden"></div>
-      <div id="mt-results"><p class="empty">Apasă „Scanează” ca să vezi cât spațiu se poate elibera. Scanarea doar citește.</p></div>
+      <div id="mt-results"><p class="empty" data-i18n="mt.empty"></p></div>
     </div>
 
     <div class="page hidden" id="page-registru">
       <header>
-        <h1>Registru curat</h1>
+        <h1 data-i18n="reg.title"></h1>
         <div class="actions">
-          <button class="ghost" id="btn-scan">Scanează</button>
-          <button id="btn-clean" disabled>Curăță selectate</button>
+          <button class="ghost" id="btn-scan" data-i18n="common.scan"></button>
+          <button id="btn-clean" disabled data-i18n="common.clean"></button>
         </div>
       </header>
-      <p class="lead">Caută resturi lăsate de programe dezinstalate. O intrare apare doar dacă fișierul către care trimite sigur nu mai există. Înainte de ștergere se face copie, iar totul se poate anula din „Jurnal și anulare”.</p>
+      <p class="lead" data-i18n="reg.lead"></p>
       <div id="reg-status" class="status hidden"></div>
-      <div id="reg-results"><p class="empty">Apasă „Scanează”. Scanarea doar citește, nu schimbă nimic.</p></div>
+      <div id="reg-results"><p class="empty" data-i18n="reg.empty"></p></div>
     </div>
 
     <div class="page hidden" id="page-servicii">
       <header>
-        <h1>Componente și servicii</h1>
+        <h1 data-i18n="svc.title"></h1>
         <div class="actions">
-          <button id="btn-svc-apply" disabled>Aplică selectate</button>
+          <button id="btn-svc-apply" disabled data-i18n="common.apply"></button>
         </div>
       </header>
-      <p class="lead">Alege cum folosești calculatorul. PioCare propune doar servicii de care nu ai nevoie și nu oprește niciodată un serviciu de care depinde altul activ (atunci îl lasă pe „manual”, adică pornește singur doar când e nevoie). Schimbările au efect după repornire și se pot anula din jurnal.</p>
+      <p class="lead" data-i18n="svc.lead"></p>
 
       <div class="op">
-        <b>Profil</b>
+        <b data-i18n="svc.profile"></b>
         <div class="seg" id="profiles">
-          <label><input type="radio" name="profile" value="acasa" checked> Acasă</label>
-          <label><input type="radio" name="profile" value="birou"> Birou</label>
-          <label><input type="radio" name="profile" value="gaming"> Gaming</label>
+          <label><input type="radio" name="profile" value="acasa" checked> <span data-i18n="svc.p.acasa"></span></label>
+          <label><input type="radio" name="profile" value="birou"> <span data-i18n="svc.p.birou"></span></label>
+          <label><input type="radio" name="profile" value="gaming"> <span data-i18n="svc.p.gaming"></span></label>
         </div>
-        <b>Ce folosești pe acest calculator?</b>
+        <b data-i18n="svc.uses"></b>
         <div class="feats" id="features"></div>
       </div>
 
       <div id="svc-status" class="status hidden"></div>
       <div id="svc-proposals"></div>
 
-      <h2>Harta serviciilor</h2>
-      <p class="lead">Toate serviciile Windows, cu dependențele în ambele sensuri. Cele marcate „vital” nu sunt atinse niciodată de PioCare.</p>
-      <input id="svc-filter" class="search" placeholder="Caută serviciu (nume sau descriere)…">
+      <h2 data-i18n="svc.mapTitle"></h2>
+      <p class="lead" data-i18n="svc.mapLead"></p>
+      <input id="svc-filter" class="search" data-i18n-ph="svc.filter">
       <div id="svc-map" class="map"></div>
     </div>
 
     <div class="page hidden" id="page-firewall">
       <header>
-        <h1>Firewall pentru siguranță</h1>
+        <h1 data-i18n="fw.title"></h1>
         <div class="actions">
-          <button id="btn-fw-apply" disabled>Aplică selectate</button>
+          <button id="btn-fw-apply" disabled data-i18n="common.apply"></button>
         </div>
       </header>
-      <p class="lead">PioCare lucrează peste Windows Firewall și doar adaugă blocări: porți de intrare folosite de atacatori și unelte Windows prin care virușii descarcă alți viruși. Navigarea, actualizările și jocurile nu sunt atinse. Toate regulile poartă numele „PioCare” și se pot anula din jurnal.</p>
+      <p class="lead" data-i18n="fw.lead"></p>
 
       <section class="cards" id="fw-profiles"></section>
 
       <div class="op" style="margin-top:14px">
-        <b>Ce folosești?</b>
+        <b data-i18n="fw.uses"></b>
         <div class="feats" id="fw-features"></div>
       </div>
       <div id="fw-status" class="status hidden"></div>
       <div id="fw-proposals"></div>
 
-      <h2>Programe care ies acum pe internet</h2>
-      <p class="lead">Programele noi, nevăzute până acum de PioCare, apar primele, marcate „nou”. Un program necunoscut poate fi blocat cu un clic (se poate anula din jurnal).</p>
-      <div class="actions" style="margin-bottom:10px"><button class="ghost" id="btn-fw-activity">Reîmprospătează</button></div>
+      <h2 data-i18n="fw.liveTitle"></h2>
+      <p class="lead" data-i18n="fw.liveLead"></p>
+      <div class="actions" style="margin-bottom:10px"><button class="ghost" id="btn-fw-activity" data-i18n="common.refresh"></button></div>
       <div id="fw-activity"></div>
     </div>
 
     <div class="page hidden" id="page-jurnal">
       <header>
-        <h1>Jurnal și anulare</h1>
+        <h1 data-i18n="j.title"></h1>
         <div class="actions">
-          <button class="ghost" id="btn-test" title="Scrie două valori în HKCU\Software\PioCare\Proba, ca să vezi cum funcționează anularea.">Probă sigură</button>
-          <button class="ghost" id="btn-svc" title="TEST: trece Windows Search pe pornire manuală. Cere administrator. Se anulează din jurnal.">Probă serviciu</button>
-          <button id="btn-backup" title="Punct de restaurare + export firewall + export configurație servicii. Cere administrator.">Copie completă acum</button>
+          <button class="ghost" id="btn-test" data-i18n="j.test" data-i18n-title="j.test.tip"></button>
+          <button class="ghost" id="btn-svc" data-i18n="j.svc" data-i18n-title="j.svc.tip"></button>
+          <button id="btn-backup" data-i18n="j.backup" data-i18n-title="j.backup.tip"></button>
         </div>
       </header>
       <div id="protect" class="status warn hidden">
-        <b>Protecția sistemului (punctele de restaurare Windows) pare oprită pe C:.</b>
-        PioCare își face oricum copiile proprii, dar un punct de restaurare e o plasă de siguranță în plus.
-        <div class="op-actions"><button id="btn-protect">Pornește Protecția sistemului</button></div>
+        <b data-i18n="j.protect.title"></b>
+        <span data-i18n="j.protect.text"></span>
+        <div class="op-actions"><button id="btn-protect" data-i18n="j.protect.btn"></button></div>
       </div>
-      <p class="lead">Fiecare schimbare făcută de PioCare apare aici, cu starea de dinainte salvată. Butonul „Anulează” o readuce exact cum era.</p>
+      <p class="lead" data-i18n="j.lead"></p>
       <div id="status" class="status hidden"></div>
       <div id="ops"></div>
     </div>
   </main>
 
+  <script src="i18n/ro.js"></script>
+  <script src="i18n/en.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
