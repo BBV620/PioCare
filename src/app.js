@@ -881,6 +881,56 @@ $("st-list").addEventListener("click", async (e) => {
   }
 });
 
+// ---------- foldere rămase ----------
+const orStatus = statusBox("or-status");
+function updateOrClean() {
+  const boxes = [...document.querySelectorAll("#or-list input:checked")];
+  const total = boxes.reduce((a, c) => a + Number(c.dataset.bytes || 0), 0);
+  $("btn-or-clean").classList.toggle("hidden", boxes.length === 0);
+  $("btn-or-clean").textContent = t("or.cleanN", { n: boxes.length, size: mb(total) });
+}
+async function scanOrphans() {
+  $("btn-or-scan").disabled = true;
+  orStatus(t("or.scanning"), "warn");
+  try {
+    const list = await invoke("orphans_scan");
+    const total = list.reduce((a, o) => a + o.size_bytes, 0);
+    orStatus(list.length ? t("or.found", { n: list.length, size: mb(total) }) : t("or.none"), list.length ? "warn" : "ok");
+    $("or-list").innerHTML = list.length
+      ? `<ul class="finds">${list
+          .map(
+            (o) => `<li><label><input type="checkbox" checked data-or="${esc(o.id)}" data-bytes="${o.size_bytes}">
+          <span><b>${esc(o.name)}</b> <span class="sub">${esc(mb(o.size_bytes))}</span>${o.needs_admin ? ` <span class="tag">${esc(t("common.admin"))}</span>` : ""}
+          <div class="sub">${esc(o.path)}</div>
+          <div class="sub">${esc(t("or.age", { n: o.days_unused }))}</div></span></label></li>`
+          )
+          .join("")}</ul>`
+      : "";
+    updateOrClean();
+  } catch (e) {
+    orStatus(String(e), "bad");
+  } finally {
+    $("btn-or-scan").disabled = false;
+  }
+}
+$("btn-or-scan").addEventListener("click", scanOrphans);
+$("or-list").addEventListener("change", updateOrClean);
+$("btn-or-clean").addEventListener("click", async () => {
+  const ids = [...document.querySelectorAll("#or-list input:checked")].map((c) => c.dataset.or);
+  if (!ids.length) return;
+  $("btn-or-clean").disabled = true;
+  orStatus(t("or.cleaning"), "warn");
+  try {
+    const op = await invoke("orphans_clean", { ids });
+    await scanOrphans();
+    orStatus(`${t("j.result", { title: op.title, label: statusLabel(op.status) })} ${t("common.undoHint")}`, op.status === "applied" ? "ok" : "bad");
+  } catch (e) {
+    orStatus(String(e), "bad");
+  } finally {
+    $("btn-or-clean").disabled = false;
+  }
+});
+
 // ---------- dezinstalare ----------
 let programs = [];
 let current = null; // programul în lucru (informațiile lui rămân după ce dispare din registru)

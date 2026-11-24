@@ -316,6 +316,28 @@ fn startup_set(ids: Vec<String>, enable: bool) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Foldere rămase de la programe dezinstalate (doar citire).
+#[tauri::command(async)]
+fn orphans_scan() -> Vec<uninstall::Orphan> {
+    uninstall::orphans()
+}
+
+/// Mută în carantină folderele orfane alese (rescanează întâi), prin motor, cu anulare.
+#[tauri::command(async)]
+fn orphans_clean(ids: Vec<String>) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let chosen: Vec<_> = uninstall::orphans().into_iter().filter(|o| ids.contains(&o.id)).collect();
+    if chosen.is_empty() {
+        return Err(i18n::t("nicio intrare selectată nu mai este valabilă; rescanează", "none of the selected entries is still valid; scan again"));
+    }
+    let plan = Plan {
+        title: i18n::t(&format!("Foldere rămase: {} mutate în carantină", chosen.len()), &format!("Leftover folders: {} moved to quarantine", chosen.len())),
+        rule_id: Some("uninstall.orphans".into()),
+        actions: chosen.into_iter().map(|o| ActionSpec::Quarantine { path: o.path }).collect(),
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 /// Dezinstalator: lista programelor (doar citire).
 #[tauri::command(async)]
 fn programs_list() -> Vec<uninstall::Program> {
@@ -487,6 +509,8 @@ pub fn run() {
             tasks_apply,
             startup_list,
             startup_set,
+            orphans_scan,
+            orphans_clean,
             programs_list,
             program_exists,
             program_uninstall,

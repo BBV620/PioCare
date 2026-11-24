@@ -464,8 +464,151 @@ pub fn leftovers(prog: &Program, still_installed: &[Program]) -> Vec<Leftover> {
     out
 }
 
+// ---------------- foldere orfane ----------------
+
+/// Foldere care nu se propun niciodată (Windows, drivere, componente comune, securitate).
+const ORPHAN_NEVER: &[&str] = &[
+    "microsoft", "windows", "windowsapps", "packages", "packagecache", "commonfiles", "windowsdefender", "windowsdefenderadvancedthreatprotection",
+    "windowsmail", "windowsmediaplayer", "windowsnt", "windowsphotoviewer", "windowsportabledevices", "windowspowershell", "windowssidebar",
+    "internetexplorer", "modifiablewindowsapps", "msbuild", "referenceassemblies", "dotnet", "nvidia", "nvidiacorporation", "intel", "amd",
+    "ati", "realtek", "malwarebytes", "mozilla", "google", "regid19910908com.microsoft", "ssh", "usoshared", "usoprivate", "comms", "softwaredistribution",
+    "temp", "tmp", "crashdumps", "connecteddevicesplatform", "d3dscache", "packagemanagement", "programs", "publisher", "virtualstore",
+    "package", "desktop.ini", "piocare", "piogrup", "azor", "baukurier", "piocut", "piotile", "pionest", "claude", "anthropic",
+    "nodejs", "npm", "npmcache", "python", "pip", "git", "githubcli", "rustup", "cargo", "uninstallinformation", "installer",
+    "applicationdata", "startmenu", "templates", "documents", "regid", "oem", "boot", "recovery", "drivers", "hyperv", "vmware",
+];
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Orphan {
+    pub id: String,
+    pub path: String,
+    pub name: String,
+    pub size_bytes: u64,
+    pub days_unused: u64,
+    pub needs_admin: bool,
+    /// Producător cunoscut ca lăsând resturi (Avast, AVG, IObit…): propus bifat.
+    pub likely: bool,
+}
+
+const KNOWN_LEFTOVER: &[&str] = &["avast", "avg", "evorim", "iobit", "itop", "ccleaner", "piriform", "mcafee", "norton", "kaspersky", "bitdefender", "advancedsystemoptimizer", "systweak", "driverbooster", "wondershare", "babylon", "ask", "opencandy", "utorrent", "bittorrent"];
+
+#[cfg(windows)]
+pub fn orphans() -> Vec<Orphan> {
+    use std::collections::HashSet;
+    let installed = list();
+    // Nume „în viață”: programe instalate (nume, producător, folder), primul cuvânt semnificativ din nume.
+    let mut tokens: HashSet<String> = HashSet::new();
+    let mut live_paths: Vec<String> = vec![];
+    for p in &installed {
+        tokens.insert(norm(&p.name));
+        let pubn = norm_publisher(&p.publisher);
+        if pubn.len() >= 3 {
+            tokens.insert(pubn);
+        }
+        if let Some(first) = p.name.split_whitespace().next() {
+            let f = norm(first);
+            if f.len() >= 4 {
+                tokens.insert(f);
+            }
+        }
+        let loc = p.install_location.trim_end_matches('\\').to_lowercase();
+        if loc.len() > 3 {
+            if let Some(leaf) = Path::new(&loc).file_name() {
+                tokens.insert(norm(&leaf.to_string_lossy()));
+            }
+            live_paths.push(loc);
+        }
+    }
+    // Căi folosite acum: servicii, sarcini, programe la pornire, procese care rulează.
+    if let Ok(svcs) = crate::services::list() {
+        for s in svcs {
+            if let Ok(k) = hk(Root::HKLM).open_subkey(format!("SYSTEM\\CurrentControlSet\\Services\\{}", s.name)) {
+                let img: String = k.get_value("ImagePath").unwrap_or_default();
+                if let Some(e) = crate::cleaner::exe_from_command(&img) {
+                    live_paths.push(e.to_lowercase());
+                }
+            }
+        }
+    }
+    for t in crate::startup::list() {
+        if let Some(p) = t.path {
+            live_paths.push(p.to_lowercase());
+        }
+    }
+    for t in crate::tasks::list() {
+        if let Some(p) = t.file {
+            live_paths.push(p.to_lowercase());
+        }
+    }
+    let mut sys = sysinfo::System::new();
+    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    for p in sys.processes().values() {
+        if let Some(e) = p.exe() {
+            live_paths.push(e.to_string_lossy().to_lowercase());
+        }
+    }
+
+    let roots = [
+        (std::env::var("ProgramData").ok(), true),
+        (std::env::var("ProgramFiles").ok(), true),
+        (std::env::var("ProgramFiles(x86)").ok(), true),
+        (std::env::var("APPDATA").ok(), false),
+        (std::env::var("LOCALAPPDATA").ok(), false),
+        (std::env::var("LOCALAPPDATA").ok().map(|l| format!("{l}\\Programs")), false),
+    ];
+    let now = std::time::SystemTime::now();
+    let mut out = vec![];
+    for (root, admin) in roots {
+        let Some(root) = root else { continue };
+        let Ok(rd) = std::fs::read_dir(&root) else { continue };
+        for e in rd.flatten() {
+            let path = e.path();
+            let Ok(m) = std::fs::symlink_metadata(&path) else { continue };
+            if !m.is_dir() || m.file_type().is_symlink() {
+                continue;
+            }
+            let name = e.file_name().to_string_lossy().into_owned();
+            let n = norm(&name);
+            if n.len() < 3 || name.starts_with('.') || name.starts_with('{') || ORPHAN_NEVER.iter().any(|x| n == *x || n.starts_with(x)) {
+                continue;
+            }
+            // Se potrivește cu ceva instalat? (în ambele sensuri: „Avast Software” ↔ „avast”)
+            if tokens.iter().any(|t| t.len() >= 3 && (n.starts_with(t.as_str()) || t.starts_with(n.as_str()))) {
+                continue;
+            }
+            let pl = path.to_string_lossy().to_lowercase();
+            if live_paths.iter().any(|lp| lp.starts_with(&format!("{pl}\\")) || *lp == pl) {
+                continue; // în uz
+            }
+            let s = path.to_string_lossy().into_owned();
+            if check_quarantine_path(&s).is_err() {
+                continue;
+            }
+            let days = m.modified().ok().and_then(|t| now.duration_since(t).ok()).map(|d| d.as_secs() / 86_400).unwrap_or(0);
+            let likely = KNOWN_LEFTOVER.iter().any(|k| n.starts_with(k));
+            // Doar producătorii cunoscuți că lasă resturi. Restul folderelor „nepotrivite” sunt de obicei
+            // setări ale unor programe portabile sau per-utilizator, pe care PioCare nu le poate dovedi orfane.
+            if !likely {
+                continue;
+            }
+            out.push(Orphan { id: s.clone(), path: s, name, size_bytes: dir_size(&path), days_unused: days, needs_admin: admin, likely });
+        }
+    }
+    out.sort_by(|a, b| b.likely.cmp(&a.likely).then(b.size_bytes.cmp(&a.size_bytes)));
+    out
+}
+
 #[cfg(all(test, windows))]
 mod tests {
+    /// cargo test print_orphans -- --ignored --nocapture (doar citire)
+    #[test]
+    #[ignore]
+    fn print_orphans() {
+        for o in super::orphans() {
+            println!("{} | {:.1} MB | {} zile | probabil={}", o.path, o.size_bytes as f64 / 1e6, o.days_unused, o.likely);
+        }
+    }
+
     use super::*;
 
     #[test]
