@@ -73,50 +73,62 @@ fn ps(script: &str, env: &[(&str, &str)]) -> Result<String, String> {
     run_hidden_env("powershell.exe", &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &full], env)
 }
 
-/// Rulează `netsh advfirewall firewall …` (unealta oficială, rapidă: sub o zecime de secundă).
-/// Argumentele sunt deja validate (fără ghilimele), deci pot fi puse între ghilimele în siguranță.
+/// Acces direct la Windows Firewall prin interfața COM oficială (INetFwPolicy2): rapid și fără
+/// linii de comandă, pe care unele antivirusuri (ex. Malwarebytes) le blochează când conțin „mshta.exe”.
 #[cfg(windows)]
-fn netsh(args: &[String]) -> Result<String, String> {
-    use std::os::windows::process::CommandExt;
-    let mut cmd = std::process::Command::new("netsh.exe");
-    cmd.args(["advfirewall", "firewall"]);
-    for a in args {
-        cmd.raw_arg(a);
+fn with_policy<T>(f: impl FnOnce(&windows::Win32::NetworkManagement::WindowsFirewall::INetFwPolicy2) -> windows::core::Result<T>) -> Result<T, String> {
+    use windows::Win32::NetworkManagement::WindowsFirewall::{INetFwPolicy2, NetFwPolicy2};
+    use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
+    unsafe {
+        let init = CoInitializeEx(None, COINIT_MULTITHREADED);
+        let res = CoCreateInstance::<_, INetFwPolicy2>(&NetFwPolicy2, None, CLSCTX_INPROC_SERVER).and_then(|p| f(&p));
+        if init.is_ok() {
+            CoUninitialize();
+        }
+        res.map_err(|e| format!("Windows Firewall: {}", e.message()))
     }
-    cmd.creation_flags(0x0800_0000);
-    let out = cmd.output().map_err(|e| format!("netsh: {e}"))?;
-    let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    if out.status.success() { Ok(text) } else { Err(format!("netsh: {text}")) }
 }
 
-/// Regula se creează cu `netsh`: numele „PioCare-…”, descrierea „PioCare: …”.
+/// Regula se creează prin API-ul Windows Firewall: numele „PioCare-…”, grupul „PioCare”.
 #[cfg(windows)]
 pub fn add_rule(r: &FwRule) -> Result<(), String> {
+    use windows::core::BSTR;
+    use windows::Win32::Foundation::VARIANT_TRUE;
+    use windows::Win32::NetworkManagement::WindowsFirewall::*;
+    use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_INPROC_SERVER};
     r.validate()?;
     if rule_exists(&r.name) {
         return Ok(());
     }
-    let profile = if r.profiles.eq_ignore_ascii_case("any") { "any".to_string() } else { r.profiles.to_lowercase() };
-    let mut a = vec![
-        "add".to_string(),
-        "rule".to_string(),
-        format!("name=\"{}\"", r.name),
-        format!("dir={}", r.direction),
-        "action=block".to_string(),
-        "enable=yes".to_string(),
-        format!("profile={profile}"),
-        format!("description=\"PioCare: {}\"", r.display),
-    ];
-    if let Some(p) = &r.protocol {
-        a.push(format!("protocol={p}"));
+    let mut profiles = 0i32;
+    for p in r.profiles.split(',').map(|s| s.trim().to_lowercase()) {
+        profiles |= match p.as_str() {
+            "public" => NET_FW_PROFILE2_PUBLIC.0,
+            "private" => NET_FW_PROFILE2_PRIVATE.0,
+            "domain" => NET_FW_PROFILE2_DOMAIN.0,
+            _ => NET_FW_PROFILE2_ALL.0,
+        };
     }
-    if let Some(lp) = &r.local_ports {
-        a.push(format!("localport={lp}"));
-    }
-    if let Some(prog) = &r.program {
-        a.push(format!("program=\"{prog}\""));
-    }
-    netsh(&a)?;
+    with_policy(|policy| unsafe {
+        let rule: INetFwRule = CoCreateInstance(&NetFwRule, None, CLSCTX_INPROC_SERVER)?;
+        rule.SetName(&BSTR::from(r.name.as_str()))?;
+        rule.SetDescription(&BSTR::from(format!("PioCare: {}", r.display)))?;
+        rule.SetGrouping(&BSTR::from("PioCare"))?;
+        rule.SetDirection(if r.direction == "in" { NET_FW_RULE_DIR_IN } else { NET_FW_RULE_DIR_OUT })?;
+        rule.SetAction(NET_FW_ACTION_BLOCK)?;
+        if let Some(p) = &r.protocol {
+            rule.SetProtocol(if p == "UDP" { NET_FW_IP_PROTOCOL_UDP.0 } else { NET_FW_IP_PROTOCOL_TCP.0 })?;
+        }
+        if let Some(lp) = &r.local_ports {
+            rule.SetLocalPorts(&BSTR::from(lp.as_str()))?;
+        }
+        if let Some(prog) = &r.program {
+            rule.SetApplicationName(&BSTR::from(prog.as_str()))?;
+        }
+        rule.SetProfiles(profiles)?;
+        rule.SetEnabled(VARIANT_TRUE)?;
+        policy.Rules()?.Add(&rule)
+    })?;
     if rule_exists(&r.name) { Ok(()) } else { Err(crate::i18n::t(&format!("regula {} nu a apărut în firewall", r.name), &format!("rule {} did not appear in the firewall", r.name))) }
 }
 
@@ -131,7 +143,7 @@ pub fn remove_rule(name: &str) -> Result<(), String> {
         // Regulă creată de versiunile 1.0.0–1.0.1 (cu PowerShell): identificatorul ei este chiar numele.
         ps("Remove-NetFirewallRule -Name $env:PC_NAME", &[("PC_NAME", name)])?;
     } else {
-        netsh(&["delete".into(), "rule".into(), format!("name=\"{name}\"")])?;
+        with_policy(|policy| unsafe { policy.Rules()?.Remove(&windows::core::BSTR::from(name)) })?;
     }
     Ok(())
 }
