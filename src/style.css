@@ -95,6 +95,7 @@ button.ghost { background: transparent; color: var(--text); border: 1px solid va
 .help h2:first-child { margin-top: 0; }
 .help code { font-size: 12.5px; background: var(--bg); padding: 1px 5px; border-radius: 4px; }
 .svc.dim { opacity: .7; }
+.brand .ver { font-size: 12px; font-weight: 500; opacity: .6; align-self: flex-end; margin-bottom: 3px; }
 .gauges { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
 .gauge { text-align: center; }
 .ring { width: 140px; height: 140px; }

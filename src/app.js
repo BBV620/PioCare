@@ -1081,6 +1081,11 @@ $("refresh").addEventListener("click", loadOverview);
   LANG = LANGS.includes(info.lang) ? info.lang : LANGS.includes(info.suggestion) ? info.suggestion : "ro";
   applyTexts();
   fillLangSelect();
+  try {
+    const v = await window.__TAURI__.app.getVersion();
+    $("brand-ver").textContent = v;
+    document.title = `PioCare ${v}`;
+  } catch {}
   if (invoke && !info.lang) {
     // Prima pornire: întrebăm limba; butonul sugerat (limba Windows) e primul în focus.
     $("lang-pick").classList.remove("hidden");
