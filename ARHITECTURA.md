@@ -45,6 +45,28 @@ Alte principii:
 - interfața rulează fără drepturi de administrator; schimbările trec printr-o etapă separată, ridicată (UAC);
 - fiecare propunere spune *de ce* (ce regulă a declanșat-o) și ce risc are.
 
+## Motorul de schimbări (0.2)
+
+Orice schimbare este un **plan** (o listă de acțiuni elementare) trecut prin `src-tauri/src/engine.rs`:
+
+1. se salvează starea de dinainte pentru **toți** pașii (valoarea exactă de registru, tip + octeți; cheile întregi cu `reg export`; tipul de pornire al serviciilor). Dacă o copie eșuează, nu se schimbă nimic;
+2. pentru schimbările de sistem se încearcă un punct de restaurare Windows (rezultatul se scrie în jurnal);
+3. se aplică pașii; dacă unul eșuează, cei deja aplicați se readuc automat;
+4. „Anulează” readuce pașii în ordine inversă.
+
+Acțiuni disponibile: setare/ștergere valoare de registru, ștergere cheie, tip de pornire serviciu (prin Service Control Manager).
+Refuzuri automate: căi de registru prea generale (mai puțin de două niveluri) și drivere (servicii cu pornire boot/system).
+
+Jurnalul: `%LOCALAPPDATA%\PioCare\journal\<id>\operation.json`, lângă fișierele de copie. Se rescrie după fiecare pas.
+
+**Copie completă**: punct de restaurare + `netsh advfirewall export` + export `HKLM\SYSTEM\CurrentControlSet\Services`.
+
+**Administrator**: interfața rulează ca utilizator. Când un plan atinge HKLM sau servicii, PioCare se repornește pe sine cu
+`--elevated <cerere> <rezultat>` (fereastra UAC), execută doar acel plan și se închide.
+
+Testat pe PC-ul de lucru doar în `HKCU\Software\PioCare` (fără risc). Schimbările de sistem (servicii, HKLM, copie completă)
+se testează întâi într-o mașină virtuală Hyper-V.
+
 ## Pachetele de reguli
 
 - format: `rules/*.json`, cu `schema_version` (formatul) și `version` (data pachetului);
@@ -67,7 +89,7 @@ PioCare/
 | Etapă | Conținut |
 |---|---|
 | 0.1 | Schelet: dashboard care doar citește (versiune Windows, spațiu liber, programe instalate, pachet de reguli). |
-| 0.2 | Jurnal + copii de siguranță + anulare (fundația pentru orice schimbare). |
+| 0.2 ✓ | Jurnal + copii de siguranță + anulare (fundația pentru orice schimbare). Vezi mai jos. |
 | 0.3 | Registru curat: detectare resturi, apoi ștergere cu copie. |
 | 0.4 | Servicii: graf de dependențe, profiluri, oprire/pornire cu anulare. |
 | 0.5 | Firewall: politică de siguranță, export/import, monitorizare programe noi. |

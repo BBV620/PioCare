@@ -18,7 +18,7 @@ Scopul: calculatorul să revină la performanța lui reală, cu navigare mai sig
 
 Goal: bring the PC back to its real performance, with safer browsing.
 
-> Stadiu / Status: 0.1 — schelet, doar citire / skeleton, read-only.
+> Stadiu / Status: 0.2 — jurnal, copii de siguranță, anulare / journal, backups, undo.
 
 ## Rulare / Run
 

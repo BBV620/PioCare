@@ -10,41 +10,56 @@
   <aside class="side">
     <div class="brand"><span class="logo">P</span> PioCare</div>
     <nav>
-      <a class="active" href="#">Panou</a>
+      <a class="active" href="#panou" data-page="panou">Panou</a>
       <a class="soon" href="#">Întreținere</a>
       <a class="soon" href="#">Registru curat</a>
       <a class="soon" href="#">Componente și servicii</a>
       <a class="soon" href="#">Firewall</a>
-      <a class="soon" href="#">Jurnal și anulare</a>
+      <a href="#jurnal" data-page="jurnal">Jurnal și anulare</a>
     </nav>
-    <div class="mode">Mod: doar citire</div>
+    <div class="mode" id="mode">Mod: utilizator</div>
   </aside>
 
   <main>
-    <header>
-      <h1>Starea sistemului</h1>
-      <button id="refresh">Reîmprospătează</button>
-    </header>
+    <div class="page" id="page-panou">
+      <header>
+        <h1>Starea sistemului</h1>
+        <button id="refresh">Reîmprospătează</button>
+      </header>
 
-    <section class="cards">
-      <div class="card"><h3>Windows</h3><p class="big" id="win">…</p><p class="sub" id="winver"></p></div>
-      <div class="card"><h3>Disc C:</h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
-      <div class="card"><h3>Programe instalate</h3><p class="big" id="apps">…</p><p class="sub">din registru (64 biți, 32 biți, utilizator)</p></div>
-      <div class="card"><h3>Pornit de</h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
-      <div class="card"><h3>Pachet de reguli</h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
-      <div class="card"><h3>Firewall</h3><p class="big muted">în curând</p><p class="sub">verificare prin API-ul oficial Windows Firewall</p></div>
-    </section>
+      <section class="cards">
+        <div class="card"><h3>Windows</h3><p class="big" id="win">…</p><p class="sub" id="winver"></p></div>
+        <div class="card"><h3>Disc C:</h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
+        <div class="card"><h3>Programe instalate</h3><p class="big" id="apps">…</p><p class="sub">din registru (64 biți, 32 biți, utilizator)</p></div>
+        <div class="card"><h3>Pornit de</h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
+        <div class="card"><h3>Pachet de reguli</h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
+        <div class="card"><h3>Ultima copie completă</h3><p class="big" id="lastbackup">…</p><p class="sub" id="lastbackupsub"></p></div>
+      </section>
 
-    <section class="modules">
-      <h2>Module</h2>
-      <div class="grid">
-        <div class="mod"><b>Întreținere generală</b><span>Temporare, cache-uri, componente Windows</span></div>
-        <div class="mod"><b>Registru curat</b><span>Resturi de la programe dezinstalate</span></div>
-        <div class="mod"><b>Componente și servicii</b><span>Graf de dependențe, profiluri Acasă / Birou / Gaming</span></div>
-        <div class="mod"><b>Firewall pentru siguranță</b><span>Politică restrictivă, programe noi care ies pe internet</span></div>
-      </div>
-      <p class="note">Nicio schimbare nu se face fără copie de siguranță și fără posibilitate de anulare.</p>
-    </section>
+      <section class="modules">
+        <h2>Module</h2>
+        <div class="grid">
+          <div class="mod"><b>Întreținere generală</b><span>Temporare, cache-uri, componente Windows</span></div>
+          <div class="mod"><b>Registru curat</b><span>Resturi de la programe dezinstalate</span></div>
+          <div class="mod"><b>Componente și servicii</b><span>Graf de dependențe, profiluri Acasă / Birou / Gaming</span></div>
+          <div class="mod"><b>Firewall pentru siguranță</b><span>Politică restrictivă, programe noi care ies pe internet</span></div>
+        </div>
+        <p class="note">Nicio schimbare nu se face fără copie de siguranță și fără posibilitate de anulare.</p>
+      </section>
+    </div>
+
+    <div class="page hidden" id="page-jurnal">
+      <header>
+        <h1>Jurnal și anulare</h1>
+        <div class="actions">
+          <button class="ghost" id="btn-test" title="Scrie două valori în HKCU\Software\PioCare\Proba, ca să vezi cum funcționează anularea.">Probă sigură</button>
+          <button id="btn-backup" title="Punct de restaurare + export firewall + export configurație servicii. Cere administrator.">Copie completă acum</button>
+        </div>
+      </header>
+      <p class="lead">Fiecare schimbare făcută de PioCare apare aici, cu starea de dinainte salvată. Butonul „Anulează” o readuce exact cum era.</p>
+      <div id="status" class="status hidden"></div>
+      <div id="ops"></div>
+    </div>
   </main>
 
   <script src="app.js"></script>
