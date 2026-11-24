@@ -45,11 +45,14 @@ pub enum ActionSpec {
     RegDeleteValue { root: Root, path: String, name: String },
     RegDeleteKey { root: Root, path: String },
     ServiceStartType { name: String, start: StartType },
+    /// Protecția sistemului (puncte de restaurare) pe discul C:.
+    SystemProtection { enabled: bool },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Before {
+    Protection { enabled: bool },
     /// Starea unei valori: dacă exista cheia și ce valoare era (None = nu exista).
     Value { key_existed: bool, value: Option<RegData> },
     /// Cheia întreagă, exportată cu `reg export` (fișierul e în folderul operației).
@@ -63,7 +66,7 @@ impl ActionSpec {
             ActionSpec::RegSetValue { root, .. }
             | ActionSpec::RegDeleteValue { root, .. }
             | ActionSpec::RegDeleteKey { root, .. } => *root == Root::HKLM,
-            ActionSpec::ServiceStartType { .. } => true,
+            ActionSpec::ServiceStartType { .. } | ActionSpec::SystemProtection { .. } => true,
         }
     }
 
@@ -74,6 +77,9 @@ impl ActionSpec {
             ActionSpec::RegDeleteValue { root, path, name } => format!("Șterge valoarea {root:?}\\{path} → {name}"),
             ActionSpec::RegDeleteKey { root, path } => format!("Șterge cheia {root:?}\\{path}"),
             ActionSpec::ServiceStartType { name, start } => format!("Serviciul {name}: pornire {start:?}"),
+            ActionSpec::SystemProtection { enabled } => {
+                format!("Protecția sistemului pe C: {}", if *enabled { "pornită" } else { "oprită" })
+            }
         }
     }
 }
@@ -268,6 +274,9 @@ mod win {
                 Ok(Before::KeyExport { file: Some(file) })
             }
             ActionSpec::ServiceStartType { name, .. } => Ok(Before::Service { start: read_service(name)? }),
+            ActionSpec::SystemProtection { .. } => Ok(Before::Protection {
+                enabled: crate::sys::protection_enabled_c().ok_or("nu pot citi starea Protecției sistemului")?,
+            }),
         }
     }
 
@@ -281,6 +290,7 @@ mod win {
                 Err(e) => Err(format!("{}: {e}", reg_path(*root, path))),
             },
             ActionSpec::ServiceStartType { name, start } => set_service(name, *start),
+            ActionSpec::SystemProtection { enabled } => crate::sys::set_protection_c(*enabled),
         }
     }
 
@@ -310,6 +320,7 @@ mod win {
                 Some(f) => run_hidden("reg.exe", &["import", &op_dir.join(f).to_string_lossy()]).map(|_| ()),
             },
             (ActionSpec::ServiceStartType { name, .. }, Before::Service { start }) => set_service(name, *start),
+            (ActionSpec::SystemProtection { .. }, Before::Protection { enabled }) => crate::sys::set_protection_c(*enabled),
             _ => Err("starea salvată nu se potrivește cu acțiunea".into()),
         }
     }

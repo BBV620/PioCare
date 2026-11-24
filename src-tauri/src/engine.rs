@@ -161,6 +161,10 @@ fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
         op.save(root)?;
     }
     op.status = OpStatus::Applied;
+    // Dacă tocmai am pornit Protecția sistemului, facem imediat primul punct de restaurare.
+    if op.steps.iter().any(|s| matches!(s.action, ActionSpec::SystemProtection { enabled: true })) {
+        op.restore_point = Some(sys::restore_point("protectie pornita"));
+    }
     op.save(root)?;
     Ok(op)
 }

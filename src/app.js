@@ -114,6 +114,12 @@ async function loadJournal() {
   if (!invoke) return;
   try {
     const ops = await invoke("journal_list");
+    // Protecția sistemului: starea directă (cu administrator) sau dedusă din ultimul punct de restaurare încercat.
+    const st = await invoke("protection_status");
+    const last = ops.find((o) => o.restore_point);
+    const lastFailed = last && !last.restore_point.startsWith("punct de restaurare creat");
+    const lastDisabled = lastFailed && /disabled|dezactivat|no enabled devices|dispozitive activate/i.test(last.restore_point);
+    $("protect").classList.toggle("hidden", !(st === false || (st === null && lastDisabled)));
     $("ops").innerHTML = ops.length ? ops.map(opCard).join("") : `<p class="empty">Încă nu există nicio operație. Încearcă „Probă sigură”.</p>`;
   } catch (e) {
     setStatus(String(e), "bad");
@@ -144,6 +150,12 @@ $("ops").addEventListener("click", (e) => {
 $("btn-test").addEventListener("click", (e) => runAction(e.target, "safe_test_operation", {}, "Se aplică proba…"));
 $("btn-backup").addEventListener("click", (e) =>
   runAction(e.target, "full_backup", {}, "Se face copia completă (Windows va cere confirmarea de administrator)…")
+);
+$("btn-svc").addEventListener("click", (e) =>
+  runAction(e.target, "service_test_operation", {}, "Se aplică proba pe serviciu (Windows va cere confirmarea de administrator)…")
+);
+$("btn-protect").addEventListener("click", (e) =>
+  runAction(e.target, "enable_protection", {}, "Se pornește Protecția sistemului (Windows va cere confirmarea de administrator)…")
 );
 $("refresh").addEventListener("click", loadOverview);
 

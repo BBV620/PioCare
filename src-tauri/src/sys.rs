@@ -82,6 +82,50 @@ if ($after -gt $before) { 'CREAT' } elseif ($w) { 'SARIT: ' + $w[0] } else { 'SA
     }
 }
 
+/// Protecția sistemului pe C: e pornită? `None` = nu se poate afla fără administrator.
+/// Windows ține volumele protejate în SPP\Clients (citibil doar de administrator).
+#[cfg(windows)]
+pub fn protection_enabled_c() -> Option<bool> {
+    use windows_sys::Win32::Storage::FileSystem::GetVolumeNameForVolumeMountPointW;
+    use winreg::enums::HKEY_LOCAL_MACHINE;
+    let mount: Vec<u16> = "C:\\\0".encode_utf16().collect();
+    let mut buf = [0u16; 64];
+    if unsafe { GetVolumeNameForVolumeMountPointW(mount.as_ptr(), buf.as_mut_ptr(), buf.len() as u32) } == 0 {
+        return None;
+    }
+    let vol = String::from_utf16_lossy(&buf).trim_end_matches('\0').to_lowercase();
+    let guid = vol.split("volume").nth(1)?.trim_matches(|c| c == '\\').to_string();
+    let k = winreg::RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SPP\\Clients")
+        .ok()?;
+    let v: Vec<String> = k.get_value("{09F7EDC5-294E-4180-AF6A-FB0E6A0E9513}").unwrap_or_default();
+    Some(v.iter().any(|s| s.to_lowercase().contains(&guid)))
+}
+
+#[cfg(not(windows))]
+pub fn protection_enabled_c() -> Option<bool> {
+    None
+}
+
+/// Pornește sau oprește Protecția sistemului pe C: (cere administrator).
+/// Atenție: oprirea șterge punctele de restaurare existente pe C:.
+pub fn set_protection_c(enabled: bool) -> Result<(), String> {
+    let cmd = if enabled {
+        "Enable-ComputerRestore -Drive 'C:\\'; vssadmin Resize ShadowStorage /For=C: /On=C: /MaxSize=5% | Out-Null"
+    } else {
+        "Disable-ComputerRestore -Drive 'C:\\'"
+    };
+    run_hidden(
+        "powershell.exe",
+        &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &format!("$ErrorActionPreference='Stop'; {cmd}")],
+    )?;
+    match protection_enabled_c() {
+        Some(now) if now == enabled => Ok(()),
+        Some(_) => Err("Windows nu a schimbat starea Protecției sistemului".into()),
+        None => Ok(()),
+    }
+}
+
 /// Export complet al politicii Windows Firewall (cere administrator).
 pub fn export_firewall(file: &Path) -> Result<(), String> {
     let _ = std::fs::remove_file(file);
@@ -107,6 +151,8 @@ pub fn run_self_elevated(args: &[String]) -> Result<u32, String> {
         info.lpFile = file.as_ptr();
         info.lpParameters = par.as_ptr();
         info.nShow = 0; // SW_HIDE
+        // Fereastra UAC se leagă de fereastra PioCare, ca să apară în față, nu doar în bara de jos.
+        info.hwnd = windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
         if ShellExecuteExW(&mut info) == 0 {
             return Err(if GetLastError() == 1223 {
                 "ai refuzat cererea de administrator; nu s-a schimbat nimic".into()

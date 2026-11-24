@@ -53,9 +53,15 @@
         <h1>Jurnal și anulare</h1>
         <div class="actions">
           <button class="ghost" id="btn-test" title="Scrie două valori în HKCU\Software\PioCare\Proba, ca să vezi cum funcționează anularea.">Probă sigură</button>
+          <button class="ghost" id="btn-svc" title="TEST: trece Windows Search pe pornire manuală. Cere administrator. Se anulează din jurnal.">Probă serviciu</button>
           <button id="btn-backup" title="Punct de restaurare + export firewall + export configurație servicii. Cere administrator.">Copie completă acum</button>
         </div>
       </header>
+      <div id="protect" class="status warn hidden">
+        <b>Protecția sistemului (punctele de restaurare Windows) pare oprită pe C:.</b>
+        PioCare își face oricum copiile proprii, dar un punct de restaurare e o plasă de siguranță în plus.
+        <div class="op-actions"><button id="btn-protect">Pornește Protecția sistemului</button></div>
+      </div>
       <p class="lead">Fiecare schimbare făcută de PioCare apare aici, cu starea de dinainte salvată. Butonul „Anulează” o readuce exact cum era.</p>
       <div id="status" class="status hidden"></div>
       <div id="ops"></div>

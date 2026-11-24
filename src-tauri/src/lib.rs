@@ -91,6 +91,37 @@ fn safe_test_operation() -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Probă de test pentru servicii (temporară, pentru verificarea în mașina virtuală):
+/// Windows Search (WSearch) trecut pe pornire manuală. Anularea readuce tipul inițial.
+#[tauri::command(async)]
+fn service_test_operation() -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let plan = Plan {
+        title: "Probă serviciu: Windows Search pe pornire manuală".into(),
+        rule_id: Some("test.serviciu".into()),
+        actions: vec![ActionSpec::ServiceStartType { name: "WSearch".into(), start: actions::StartType::Manual }],
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
+/// Starea Protecției sistemului pe C: (null = necunoscută fără administrator).
+#[tauri::command]
+fn protection_status() -> Option<bool> {
+    sys::protection_enabled_c()
+}
+
+/// Pornește Protecția sistemului pe C:, prin jurnal (se poate anula).
+#[tauri::command(async)]
+fn enable_protection() -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let plan = Plan {
+        title: "Pornire Protecția sistemului (puncte de restaurare) pe C:".into(),
+        rule_id: Some("sys.restore.enable".into()),
+        actions: vec![ActionSpec::SystemProtection { enabled: true }],
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 #[tauri::command]
 fn open_folder(path: String) -> Result<(), String> {
     let root = journal::default_root()?;
@@ -116,6 +147,9 @@ pub fn run() {
             undo_operation,
             full_backup,
             safe_test_operation,
+            protection_status,
+            service_test_operation,
+            enable_protection,
             open_folder
         ])
         .run(tauri::generate_context!())
