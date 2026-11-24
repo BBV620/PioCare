@@ -99,6 +99,7 @@ $r = @(Get-ScheduledTask | Where-Object {
   [pscustomobject]@{ TaskPath = $_.TaskPath; TaskName = $_.TaskName; State = [string]$_.State; Exec = [string]$a.Execute; Args = [string]$a.Arguments }
 })
 ConvertTo-Json -InputObject $r -Compress
+exit 0
 "#;
     crate::sys::run_hidden("powershell.exe", &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS])
         .ok()
@@ -217,7 +218,7 @@ pub fn list() -> Vec<StartupItem> {
 
 // ---------------- sarcini programate (pentru motor) ----------------
 
-fn valid_task(path: &str, name: &str) -> Result<(), String> {
+pub fn check_task(path: &str, name: &str) -> Result<(), String> {
     let bad = |s: &str| s.is_empty() || s.contains(['"', '\'', '`', '$', '\n', '\r']);
     if bad(name) || path.contains(['"', '\'', '`', '$']) || !path.starts_with('\\') {
         return Err(crate::i18n::t("sarcină programată invalidă", "invalid scheduled task"));
@@ -237,13 +238,13 @@ fn ps(script: &str, path: &str, name: &str) -> Result<String, String> {
 }
 
 pub fn task_enabled(path: &str, name: &str) -> Result<bool, String> {
-    valid_task(path, name)?;
+    check_task(path, name)?;
     let s = ps("[string](Get-ScheduledTask -TaskPath $env:PC_TPATH -TaskName $env:PC_TNAME).State", path, name)?;
     Ok(s.trim() != "Disabled")
 }
 
 pub fn set_task(path: &str, name: &str, enabled: bool) -> Result<(), String> {
-    valid_task(path, name)?;
+    check_task(path, name)?;
     let cmd = if enabled { "Enable-ScheduledTask" } else { "Disable-ScheduledTask" };
     ps(&format!("{cmd} -TaskPath $env:PC_TPATH -TaskName $env:PC_TNAME | Out-Null"), path, name).map(|_| ())
 }
@@ -262,9 +263,9 @@ mod tests {
 
     #[test]
     fn microsoft_tasks_refused() {
-        assert!(valid_task("\\Microsoft\\Windows\\Defrag\\", "ScheduledDefrag").is_err());
-        assert!(valid_task("\\", "Ok Task").is_ok());
-        assert!(valid_task("\\", "x\"; rm").is_err());
+        assert!(check_task("\\Microsoft\\Windows\\Defrag\\", "ScheduledDefrag").is_err());
+        assert!(check_task("\\", "Ok Task").is_ok());
+        assert!(check_task("\\", "x\"; rm").is_err());
     }
 
     #[test]

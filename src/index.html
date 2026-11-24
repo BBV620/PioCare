@@ -33,8 +33,10 @@
     <div class="brand"><span class="logo">P</span> PioCare</div>
     <nav>
       <a class="active" href="#panou" data-page="panou" data-i18n="nav.panou"></a>
+      <a href="#monitor" data-page="monitor" data-i18n="nav.monitor"></a>
       <a href="#intretinere" data-page="intretinere" data-i18n="nav.intretinere"></a>
       <a href="#pornire" data-page="pornire" data-i18n="nav.pornire"></a>
+      <a href="#sarcini" data-page="sarcini" data-i18n="nav.sarcini"></a>
       <a href="#programe" data-page="programe" data-i18n="nav.programe"></a>
       <a href="#registru" data-page="registru" data-i18n="nav.registru"></a>
       <a href="#servicii" data-page="servicii" data-i18n="nav.servicii"></a>
@@ -83,6 +85,28 @@
       </section>
     </div>
 
+    <div class="page hidden" id="page-monitor">
+      <header>
+        <h1 data-i18n="mon.title"></h1>
+        <span class="sub" id="mon-cpuname"></span>
+      </header>
+      <section class="gauges">
+        <div class="card gauge"><h3 data-i18n="mon.cpu"></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-cpu"/><text x="60" y="58" class="ring-val" id="val-cpu">–</text><text x="60" y="78" class="ring-sub" id="sub-cpu"></text></svg></div>
+        <div class="card gauge"><h3 data-i18n="mon.ram"></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-ram"/><text x="60" y="58" class="ring-val" id="val-ram">–</text><text x="60" y="78" class="ring-sub" id="sub-ram"></text></svg></div>
+        <div class="card gauge"><h3 data-i18n="mon.gpu"></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-gpu"/><text x="60" y="58" class="ring-val" id="val-gpu">–</text><text x="60" y="78" class="ring-sub" id="sub-gpu"></text></svg><p class="sub" id="gpu-note"></p></div>
+        <div class="card gauge"><h3 data-i18n="mon.procs"></h3><p class="big" id="val-procs">–</p><p class="sub" id="sub-swap"></p><p class="sub" data-i18n="mon.tempNote"></p></div>
+      </section>
+      <div class="card chart"><div class="legend-row"><span class="dot cpu"></span><span data-i18n="mon.cpu"></span><span class="dot ram"></span><span data-i18n="mon.ram"></span><span class="sub" data-i18n="mon.lastMin"></span></div>
+        <svg viewBox="0 0 600 140" preserveAspectRatio="none" id="mon-chart"><polyline id="line-cpu" class="line cpu"/><polyline id="line-ram" class="line ram"/></svg></div>
+      <h2 data-i18n="mon.procTitle"></h2>
+      <div class="seg" id="mon-sort">
+        <label><input type="radio" name="monsort" value="ram" checked> <span data-i18n="mon.byRam"></span></label>
+        <label><input type="radio" name="monsort" value="cpu"> <span data-i18n="mon.byCpu"></span></label>
+      </div>
+      <div id="mon-status" class="status hidden"></div>
+      <table class="ptable"><thead><tr><th data-i18n="mon.colName"></th><th data-i18n="mon.colRam"></th><th data-i18n="mon.colCpu"></th><th></th></tr></thead><tbody id="mon-procs"></tbody></table>
+    </div>
+
     <div class="page hidden" id="page-intretinere">
       <header>
         <h1 data-i18n="mt.title"></h1>
@@ -104,6 +128,16 @@
       <p class="lead" data-i18n="st.lead"></p>
       <div id="st-status" class="status hidden"></div>
       <div id="st-list"></div>
+    </div>
+
+    <div class="page hidden" id="page-sarcini">
+      <header>
+        <h1 data-i18n="tk.title"></h1>
+        <div class="actions"><button class="ghost" id="btn-tk-refresh" data-i18n="common.refresh"></button></div>
+      </header>
+      <p class="lead" data-i18n="tk.lead"></p>
+      <div id="tk-status" class="status hidden"></div>
+      <div id="tk-list"></div>
     </div>
 
     <div class="page hidden" id="page-programe">
@@ -211,6 +245,11 @@
         <b data-i18n="j.protect.title"></b>
         <span data-i18n="j.protect.text"></span>
         <div class="op-actions"><button id="btn-protect" data-i18n="j.protect.btn"></button></div>
+      </div>
+      <div class="op" id="rp-box">
+        <div class="op-head"><div><b data-i18n="rpx.title"></b><div class="sub" data-i18n="rpx.lead"></div></div>
+          <button class="ghost" id="btn-rp-show" data-i18n="rpx.show"></button></div>
+        <div id="rp-info"></div>
       </div>
       <p class="lead" data-i18n="j.lead"></p>
       <div id="status" class="status hidden"></div>

@@ -3,6 +3,9 @@
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.len() == 3 && args[1] == "--restore-info" {
+        std::process::exit(piocare_lib::elevated_restore_info(&args[2]));
+    }
     if args.len() == 4 && args[1] == "--elevated" {
         std::process::exit(piocare_lib::elevated_main(&args[2], &args[3]));
     }

@@ -130,6 +130,80 @@ pub fn set_protection_c(enabled: bool) -> Result<(), String> {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+pub struct RestoreInfo {
+    pub points: Vec<RestorePoint>,
+    pub used_bytes: u64,
+    pub allocated_bytes: u64,
+    /// None = nelimitat
+    pub max_bytes: Option<u64>,
+    pub disk_bytes: u64,
+    pub error: Option<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct RestorePoint {
+    pub time: String,
+    pub description: String,
+}
+
+/// Punctele de restaurare și spațiul lor pe C: (cere administrator; rulat în pasul ridicat).
+pub fn restore_info() -> RestoreInfo {
+    const PS: &str = r#"
+$ErrorActionPreference='SilentlyContinue'
+$p = @(Get-ComputerRestorePoint | ForEach-Object { [pscustomobject]@{ time = ([Management.ManagementDateTimeConverter]::ToDateTime($_.CreationTime)).ToString('yyyy-MM-dd HH:mm'); description = [string]$_.Description } })
+$vol = Get-CimInstance Win32_Volume | Where-Object { $_.DriveLetter -eq 'C:' } | Select-Object -First 1
+$s = Get-CimInstance Win32_ShadowStorage | Where-Object { $_.Volume.DeviceID -eq $vol.DeviceID } | Select-Object -First 1
+$o = [pscustomobject]@{ points = $p; used = [uint64]$s.UsedSpace; alloc = [uint64]$s.AllocatedSpace; max = [uint64]$s.MaxSpace; disk = [uint64]$vol.Capacity }
+[IO.File]::WriteAllText($env:PC_OUT, (ConvertTo-Json -InputObject $o -Depth 3 -Compress), (New-Object Text.UTF8Encoding $false))
+exit 0
+"#;
+    #[derive(serde::Deserialize)]
+    struct Raw {
+        #[serde(default)]
+        points: Vec<RestorePoint>,
+        #[serde(default)]
+        used: u64,
+        #[serde(default)]
+        alloc: u64,
+        #[serde(default)]
+        max: u64,
+        #[serde(default)]
+        disk: u64,
+    }
+    let tmp = std::env::temp_dir().join(format!("piocare-rp-{}.json", std::process::id()));
+    let res = run_hidden_env(
+        "powershell.exe",
+        &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS],
+        &[("PC_OUT", &tmp.to_string_lossy())],
+    )
+    .and_then(|_| std::fs::read_to_string(&tmp).map_err(|e| e.to_string()))
+    .and_then(|s| serde_json::from_str::<Raw>(s.trim()).map_err(|e| e.to_string()));
+    let _ = std::fs::remove_file(&tmp);
+    match res {
+        Ok(r) => RestoreInfo {
+            points: r.points,
+            used_bytes: r.used,
+            allocated_bytes: r.alloc,
+            // MaxSpace = valoarea maximă posibilă înseamnă „nelimitat”.
+            max_bytes: if r.max == 0 || r.max >= u64::MAX / 2 { None } else { Some(r.max) },
+            disk_bytes: r.disk,
+            error: None,
+        },
+        Err(e) => RestoreInfo { error: Some(e), ..Default::default() },
+    }
+}
+
+/// Limita spațiului pentru punctele de restaurare pe C: (vssadmin, cere administrator).
+/// `max` = None → nelimitat.
+pub fn set_restore_limit(max: Option<u64>) -> Result<(), String> {
+    let size = match max {
+        None => "UNBOUNDED".to_string(),
+        Some(b) => format!("{}MB", (b / 1_048_576).max(320)), // minimul acceptat de Windows: 320 MB
+    };
+    run_hidden("vssadmin.exe", &["Resize", "ShadowStorage", "/For=C:", "/On=C:", &format!("/MaxSize={size}")]).map(|_| ())
+}
+
 /// Export complet al politicii Windows Firewall (cere administrator).
 pub fn export_firewall(file: &Path) -> Result<(), String> {
     let _ = std::fs::remove_file(file);
@@ -175,6 +249,37 @@ pub fn shell_run_wait(file: &str, params: &str, admin: bool) -> Result<u32, Stri
         CloseHandle(info.hProcess);
         Ok(code)
     }
+}
+
+/// Deschide în browserul implicit o căutare pe internet (doar la cererea utilizatorului).
+/// Se trimite doar textul căutat; motorul folosit este DuckDuckGo (fără profilare).
+#[cfg(windows)]
+pub fn open_search(query: &str) -> Result<(), String> {
+    let q: String = query
+        .chars()
+        .take(200)
+        .collect::<String>()
+        .bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => (b as char).to_string(),
+            b' ' => "+".to_string(),
+            _ => format!("%{b:02X}"),
+        })
+        .collect();
+    open_url(&format!("https://duckduckgo.com/?q={q}"))
+}
+
+/// Deschide o adresă https în browserul implicit.
+#[cfg(windows)]
+pub fn open_url(url: &str) -> Result<(), String> {
+    use windows_sys::Win32::UI::Shell::ShellExecuteW;
+    if !url.starts_with("https://") || url.contains(['"', ' ', '\n']) {
+        return Err("url invalid".into());
+    }
+    let wide = |s: &str| s.encode_utf16().chain(std::iter::once(0)).collect::<Vec<u16>>();
+    let (verb, file) = (wide("open"), wide(url));
+    let r = unsafe { ShellExecuteW(std::ptr::null_mut(), verb.as_ptr(), file.as_ptr(), std::ptr::null(), std::ptr::null(), 1) };
+    if r as isize > 32 { Ok(()) } else { Err(crate::i18n::t("nu pot deschide browserul", "cannot open the browser")) }
 }
 
 /// Fereastra principală PioCare, ca fereastra UAC să i se atașeze și să apară în față.

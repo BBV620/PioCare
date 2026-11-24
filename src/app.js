@@ -89,7 +89,11 @@ async function openExplain(kind, name, path) {
     html += sec(t("ex.company"), e.company);
     html += sec(t("ex.file"), e.path);
     html += `<p class="sub" style="margin-top:14px">${esc(t("ex.base", { v: e.base_version }))}</p>`;
+    const q = [name.replace(/\.exe$/i, ""), e.company || e.file_description || ""].filter(Boolean).join(" ");
+    html += `<div class="op-actions"><button class="ghost" id="ex-search" data-q="${esc(q)}">${esc(t("ex.search"))}</button></div>
+      <p class="sub">${esc(t("ex.searchHint"))}</p>`;
     $("ex-body").innerHTML = html;
+    $("ex-search").addEventListener("click", (ev) => invoke("search_web", { query: ev.target.dataset.q }).catch(() => {}));
   } catch (err) {
     $("ex-body").textContent = String(err);
   }
@@ -115,6 +119,8 @@ document.addEventListener("keydown", (e) => {
 
 // ---------- navigare ----------
 function show(page) {
+  stopMonitor();
+  if (page === "monitor") startMonitor();
   document.querySelectorAll(".page").forEach((p) => p.classList.toggle("hidden", p.id !== `page-${page}`));
   document.querySelectorAll("nav a[data-page]").forEach((a) => a.classList.toggle("active", a.dataset.page === page));
   if (page === "jurnal") loadJournal();
@@ -123,6 +129,7 @@ function show(page) {
   if (page === "programe") loadPrograms();
   if (page === "pornire") loadStartup();
   if (page === "ajutor") loadHelp();
+  if (page === "sarcini") loadTasks();
 }
 document.querySelectorAll("nav a").forEach((a) =>
   a.addEventListener("click", (e) => {
@@ -490,7 +497,12 @@ async function loadActivity() {
               (p) => `<div class="svc">
           <div><b>${esc(p.name || "?")}</b>${p.new ? ` <span class="badge warn">${esc(t("fw.new"))}</span>` : ""}${p.blocked ? ` <span class="tag">${esc(t("fw.blockedBy"))}</span>` : ""}${p.name ? infoBtn("program", p.name, p.path || "") : ""}</div>
           <div class="sub">${esc(p.path || t("fw.hiddenPath"))}</div>
-          <div class="sub">${esc(t("fw.conns", { n: p.connections, l: p.remotes.join(", ") }))}</div>
+          <div class="sub">${esc(t("fw.connsN", { n: p.connections }))} ${p.remotes
+            .map((r) => {
+              const ip = r.slice(0, r.lastIndexOf(":"));
+              return `<button class="ipchip" data-ip="${esc(ip)}" title="${esc(t("ip.click"))}">${esc(r)}</button>`;
+            })
+            .join(" ")}</div>
           ${p.path && !p.blocked ? `<div class="op-actions"><button class="ghost" data-block="${esc(p.path)}">${esc(t("fw.block"))}</button></div>` : ""}
         </div>`
             )
@@ -523,7 +535,31 @@ $("btn-fw-apply").addEventListener("click", async () => {
     updateFwApply();
   }
 });
+async function openIp(ip) {
+  $("ex-name").textContent = ip;
+  $("ex-verdict").textContent = "";
+  $("ex-verdict").className = "badge";
+  $("ex-body").innerHTML = `<p class="sub">${esc(t("ex.loading"))}</p>`;
+  $("explain").classList.remove("hidden");
+  try {
+    const i = await invoke("ip_info", { ip });
+    $("ex-verdict").textContent = t(`ip.scope.${i.scope}`);
+    $("ex-verdict").className = `badge ${i.scope === "public" ? "muted" : "ok"}`;
+    const sec = (title, body) => (body ? `<div class="exsec"><b>${esc(title)}</b>${esc(body)}</div>` : "");
+    $("ex-body").innerHTML =
+      sec(t("ip.owner"), i.owner || t("ip.ownerUnknown")) +
+      sec(t("ip.reverse"), i.reverse_name || t("ip.noReverse")) +
+      `<p class="sub">${esc(t("ip.hint"))}</p>` +
+      (i.scope === "public" ? `<div class="op-actions"><button class="ghost" id="ip-web">${esc(t("ip.web"))}</button></div><p class="sub">${esc(t("ip.webHint"))}</p>` : "");
+    $("ip-web")?.addEventListener("click", () => invoke("ip_web", { ip: i.ip }).catch(() => {}));
+  } catch (err) {
+    $("ex-body").textContent = String(err);
+  }
+}
+
 $("fw-activity").addEventListener("click", async (e) => {
+  const chip = e.target.closest("button.ipchip");
+  if (chip) return openIp(chip.dataset.ip);
   const b = e.target.closest("button[data-block]");
   if (!b) return;
   b.disabled = true;
@@ -611,6 +647,194 @@ async function loadHelp() {
   } catch {}
   $("about").textContent = t("help.about", { v });
 }
+
+// ---------- puncte de restaurare ----------
+const gb = (b) => `${fmt(b / 1073741824, 1)} GB`;
+async function showRestorePoints() {
+  $("rp-info").innerHTML = `<p class="sub">${esc(t("rpx.loading"))}</p>`;
+  try {
+    const r = await invoke("restore_points");
+    if (r.error) throw r.error;
+    const pct = r.max_bytes && r.disk_bytes ? Math.round((r.max_bytes / r.disk_bytes) * 100) : null;
+    const last = r.points.slice(-5).reverse();
+    $("rp-info").innerHTML = `
+      <div class="exsec"><b>${esc(t("rpx.count", { n: r.points.length }))}</b>${last.map((p) => `${esc(p.time)} · ${esc(p.description)}`).join("<br>") || esc(t("rpx.none"))}</div>
+      <div class="exsec"><b>${esc(t("rpx.space"))}</b>${esc(t("rpx.used", { u: gb(r.used_bytes), m: r.max_bytes ? gb(r.max_bytes) + (pct != null ? ` (${pct}%)` : "") : t("rpx.unlimited") }))}</div>
+      <div class="exsec"><b>${esc(t("rpx.limit"))}</b>${esc(t("rpx.limitHint"))}</div>
+      <div class="op-actions">${[5, 8, 10].map((g) => `<button class="${g === 8 ? "" : "ghost"}" data-rpgb="${g}">${esc(t("rpx.set", { n: g }))}${g === 8 ? " ★" : ""}</button>`).join("")}</div>`;
+  } catch (e) {
+    $("rp-info").innerHTML = `<p class="sub">${esc(String(e))}</p>`;
+  }
+}
+$("btn-rp-show").addEventListener("click", showRestorePoints);
+$("rp-info").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-rpgb]");
+  if (!b) return;
+  await runAction("restore_limit", { gb: Number(b.dataset.rpgb) }, "rpx.working");
+  showRestorePoints();
+});
+
+// ---------- monitor ----------
+let monTimer = null;
+let monBusy = false;
+const hist = { cpu: [], ram: [] };
+const HIST = 40; // ~1 minut la 1,5 s
+const monStatus = statusBox("mon-status");
+
+function setRing(id, pct) {
+  const el = $(id);
+  const p = Math.max(0, Math.min(100, pct || 0));
+  el.style.strokeDashoffset = String(314.16 * (1 - p / 100));
+  el.classList.toggle("warn", p >= 75 && p < 90);
+  el.classList.toggle("bad", p >= 90);
+}
+
+function drawChart() {
+  const pts = (arr) => arr.map((v, i) => `${(i / (HIST - 1)) * 600},${140 - (v / 100) * 132 - 4}`).join(" ");
+  $("line-cpu").setAttribute("points", pts(hist.cpu));
+  $("line-ram").setAttribute("points", pts(hist.ram));
+}
+
+async function tickMonitor() {
+  if (monBusy || !invoke) return;
+  monBusy = true;
+  try {
+    const by = document.querySelector("input[name=monsort]:checked").value;
+    const s = await invoke("monitor_sample", { by });
+    const ramPct = s.ram_total_gb ? (s.ram_used_gb / s.ram_total_gb) * 100 : 0;
+    $("mon-cpuname").textContent = `${s.cpu_name} · ${t("mon.cores", { n: s.cores })}`;
+    setRing("ring-cpu", s.cpu_pct);
+    $("val-cpu").textContent = `${Math.round(s.cpu_pct)}%`;
+    $("sub-cpu").textContent = s.cpu_mhz ? `${fmt(s.cpu_mhz / 1000, 2)} GHz` : "";
+    setRing("ring-ram", ramPct);
+    $("val-ram").textContent = `${Math.round(ramPct)}%`;
+    $("sub-ram").textContent = `${fmt(s.ram_used_gb)} / ${fmt(s.ram_total_gb)} GB`;
+    if (s.gpu && s.gpu.temp_c != null) {
+      setRing("ring-gpu", s.gpu.temp_c);
+      $("val-gpu").textContent = `${Math.round(s.gpu.temp_c)}°C`;
+      $("sub-gpu").textContent = s.gpu.load_pct != null ? t("mon.gpuLoad", { n: Math.round(s.gpu.load_pct) }) : "";
+      $("gpu-note").textContent = s.gpu.name;
+    } else {
+      setRing("ring-gpu", 0);
+      $("val-gpu").textContent = "–";
+      $("sub-gpu").textContent = "";
+      $("gpu-note").textContent = t("mon.gpuNone");
+    }
+    $("val-procs").textContent = s.process_count;
+    $("sub-swap").textContent = t("mon.swap", { n: fmt(s.swap_used_gb) });
+    hist.cpu.push(s.cpu_pct);
+    hist.ram.push(ramPct);
+    while (hist.cpu.length > HIST) hist.cpu.shift(), hist.ram.shift();
+    drawChart();
+    const maxRam = Math.max(...s.processes.map((p) => p.ram_mb), 1);
+    $("mon-procs").innerHTML = s.processes
+      .map(
+        (p) => `<tr>
+        <td><b>${esc(p.name)}</b> ${infoBtn("program", p.name, p.path || "")}<div class="bar"><div style="width:${(p.ram_mb / maxRam) * 100}%"></div></div></td>
+        <td class="num">${esc(p.ram_mb >= 1024 ? fmt(p.ram_mb / 1024, 2) + " GB" : fmt(p.ram_mb, 0) + " MB")}</td>
+        <td class="num">${esc(fmt(p.cpu_pct, 1))}%</td>
+        <td>${p.protected ? `<span class="tag">${esc(t("mon.protected"))}</span>` : `<button class="ghost" data-kill="${p.pid}" data-name="${esc(p.name)}">${esc(t("mon.kill"))}</button>`}</td>
+      </tr>`
+      )
+      .join("");
+  } catch (e) {
+    monStatus(String(e), "bad");
+  } finally {
+    monBusy = false;
+  }
+}
+
+function startMonitor() {
+  tickMonitor();
+  monTimer = setInterval(tickMonitor, 1500);
+}
+function stopMonitor() {
+  if (monTimer) clearInterval(monTimer);
+  monTimer = null;
+}
+
+$("mon-sort").addEventListener("change", tickMonitor);
+$("mon-procs").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-kill]");
+  if (!b) return;
+  // Confirmare în doi pași: primul clic întreabă, al doilea (în 4 s) închide.
+  if (!b.dataset.armed) {
+    b.dataset.armed = "1";
+    b.textContent = t("mon.killSure");
+    b.classList.remove("ghost");
+    setTimeout(() => {
+      if (b.isConnected) {
+        delete b.dataset.armed;
+        b.textContent = t("mon.kill");
+        b.classList.add("ghost");
+      }
+    }, 4000);
+    return;
+  }
+  try {
+    await invoke("monitor_kill", { pid: Number(b.dataset.kill), name: b.dataset.name });
+    monStatus(t("mon.killed", { n: b.dataset.name }), "ok");
+  } catch (err) {
+    monStatus(String(err), "bad");
+  }
+  tickMonitor();
+});
+
+// ---------- sarcini programate ----------
+const tkStatus = statusBox("tk-status");
+
+function taskCard(k) {
+  const badges = [
+    `<span class="badge ${k.enabled ? "ok" : "muted"}">${esc(k.enabled ? t("st.on") : t("st.off"))}</span>`,
+    k.missing ? `<span class="badge bad">${esc(t("tk.missing"))}</span>` : "",
+    k.looks_like_ad ? `<span class="badge warn">${esc(t("tk.ad"))}</span>` : "",
+    k.user_created ? `<span class="tag">${esc(t("tk.yours"))}</span>` : "",
+  ].join(" ");
+  const when = [k.last_run && t("tk.last", { d: k.last_run }), k.next_run && t("tk.next", { d: k.next_run })].filter(Boolean).join(" · ");
+  return `<div class="svc ${k.enabled ? "" : "dim"}">
+    <div><b>${esc(k.name)}</b> ${badges}${k.file_name ? infoBtn("program", k.file_name, k.file || "") : ""}</div>
+    <div class="sub">${esc([k.publisher || t("st.noPublisher"), k.path, k.triggers].filter(Boolean).join(" · "))}</div>
+    ${when ? `<div class="sub">${esc(when)}</div>` : ""}
+    <div class="sub">${esc(k.command)}</div>
+    ${k.user_created ? `<div class="sub">${esc(t("tk.yoursHint"))}</div>` : ""}
+    ${k.microsoft ? "" : `<div class="op-actions">
+      <button class="ghost" data-tk="${esc(k.id)}" data-mode="${k.enabled ? "disable" : "enable"}">${esc(k.enabled ? t("tk.disable") : t("tk.enable"))}</button>
+      ${k.can_delete ? `<button class="ghost" data-tk="${esc(k.id)}" data-mode="delete">${esc(t("tk.delete"))}</button>` : ""}
+    </div>`}
+  </div>`;
+}
+
+async function loadTasks() {
+  $("tk-list").innerHTML = `<p class="empty">${esc(t("tk.loading"))}</p>`;
+  try {
+    const all = await invoke("tasks_list");
+    const mine = all.filter((k) => !k.microsoft);
+    const ms = all.filter((k) => k.microsoft);
+    const flagged = mine.filter((k) => k.missing || k.looks_like_ad).length;
+    tkStatus(t("tk.summary", { n: mine.length, f: flagged, m: ms.length }), flagged ? "warn" : "ok");
+    $("tk-list").innerHTML =
+      `<div class="map">${mine.map(taskCard).join("")}</div>` +
+      `<details class="ms"><summary>${esc(t("tk.msTitle", { n: ms.length }))}</summary><p class="sub">${esc(t("tk.msLead"))}</p><div class="map">${ms.map(taskCard).join("")}</div></details>`;
+  } catch (e) {
+    tkStatus(String(e), "bad");
+  }
+}
+
+$("btn-tk-refresh").addEventListener("click", loadTasks);
+$("tk-list").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-tk]");
+  if (!b) return;
+  b.disabled = true;
+  tkStatus(t("tk.working"), "warn");
+  try {
+    const op = await invoke("tasks_apply", { ids: [b.dataset.tk], mode: b.dataset.mode });
+    await loadTasks();
+    tkStatus(`${t("j.result", { title: op.title, label: statusLabel(op.status) })} ${t("common.undoHint")}`, op.status === "applied" ? "ok" : "bad");
+  } catch (err) {
+    tkStatus(String(err), "bad");
+    b.disabled = false;
+  }
+});
 
 // ---------- programe la pornire ----------
 const stStatus = statusBox("st-status");

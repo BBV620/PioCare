@@ -34,6 +34,22 @@ fn find<'a>(m: &'a HashMap<String, Entry>, key: &str) -> Option<&'a Entry> {
     m.iter().find(|(k, _)| k.eq_ignore_ascii_case(key)).map(|(_, v)| v)
 }
 
+/// Pentru programe: întâi potrivire exactă, apoi după începutul numelui normalizat
+/// (ex. „Java 8 Update 503 (64-bit)” → „java”). Câștigă cheia cea mai lungă.
+fn find_program<'a>(m: &'a HashMap<String, Entry>, name: &str) -> Option<&'a Entry> {
+    if let Some(e) = find(m, name) {
+        return Some(e);
+    }
+    let n = crate::uninstall::norm(name);
+    m.iter()
+        .filter_map(|(k, v)| {
+            let kn = crate::uninstall::norm(k);
+            (kn.len() >= 3 && n.starts_with(&kn)).then_some((kn.len(), v))
+        })
+        .max_by_key(|(l, _)| *l)
+        .map(|(_, v)| v)
+}
+
 #[derive(Serialize, Default)]
 pub struct Explanation {
     pub kind: String,
@@ -200,7 +216,7 @@ pub fn program(name: &str, path: Option<String>) -> Result<Explanation, String> 
         e.company = c;
         e.file_description = d;
     }
-    match find(&b.programs, &stem) {
+    match find(&b.programs, &stem).or_else(|| find_program(&b.programs, name)) {
         Some(x) => {
             e.known = true;
             e.verdict = x.verdict.clone();
@@ -212,8 +228,86 @@ pub fn program(name: &str, path: Option<String>) -> Result<Explanation, String> 
     Ok(e)
 }
 
+// ---------------- detalii IP ----------------
+
+#[derive(Deserialize)]
+struct IpOwner {
+    cidr: String,
+    owner: Text,
+}
+
+#[derive(Deserialize)]
+struct IpBase {
+    #[serde(default)]
+    ip_owners: Vec<IpOwner>,
+}
+
+#[derive(Serialize)]
+pub struct IpInfo {
+    pub ip: String,
+    /// local / private / public
+    pub scope: String,
+    pub owner: Option<String>,
+    pub reverse_name: Option<String>,
+}
+
+fn in_cidr(ip: std::net::Ipv4Addr, cidr: &str) -> bool {
+    let Some((net, bits)) = cidr.split_once('/') else { return false };
+    let (Ok(net), Ok(bits)) = (net.parse::<std::net::Ipv4Addr>(), bits.parse::<u32>()) else { return false };
+    if bits > 32 {
+        return false;
+    }
+    let mask = if bits == 0 { 0 } else { u32::MAX << (32 - bits) };
+    (u32::from(ip) & mask) == (u32::from(net) & mask)
+}
+
+/// Informații despre o adresă IP: tipul ei, proprietarul cunoscut (listă semnată, locală) și numele DNS invers.
+/// Nu se trimite nimic către servicii externe; numele DNS invers vine de la serverul DNS obișnuit al PC-ului.
+#[cfg(windows)]
+pub fn ip_info(ip_text: &str) -> Result<IpInfo, String> {
+    let ip_clean = ip_text.trim().trim_start_matches('[').split(']').next().unwrap_or("").to_string();
+    let ip: std::net::IpAddr = ip_clean.parse().map_err(|_| crate::i18n::t("adresă IP invalidă", "invalid IP address"))?;
+    let scope = match ip {
+        std::net::IpAddr::V4(v4) if v4.is_loopback() => "local",
+        std::net::IpAddr::V4(v4) if v4.is_private() || v4.is_link_local() => "private",
+        std::net::IpAddr::V6(v6) if v6.is_loopback() => "local",
+        std::net::IpAddr::V6(v6) if (v6.segments()[0] & 0xfe00) == 0xfc00 || (v6.segments()[0] & 0xffc0) == 0xfe80 => "private",
+        _ => "public",
+    };
+    let owner = match ip {
+        std::net::IpAddr::V4(v4) => {
+            let b: IpBase = serde_json::from_str(&crate::rules::text("explain")).map_err(|e| e.to_string())?;
+            b.ip_owners
+                .iter()
+                .filter(|o| in_cidr(v4, &o.cidr))
+                .max_by_key(|o| o.cidr.split('/').nth(1).and_then(|x| x.parse::<u32>().ok()).unwrap_or(0))
+                .map(|o| o.owner.get())
+        }
+        _ => None,
+    };
+    let reverse_name = crate::sys::run_hidden_env(
+        "powershell.exe",
+        &["-NoProfile", "-NonInteractive", "-Command", "try { [System.Net.Dns]::GetHostEntry($env:PC_IP).HostName } catch { '' }"],
+        &[("PC_IP", &ip.to_string())],
+    )
+    .ok()
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty() && s != &ip.to_string());
+    Ok(IpInfo { ip: ip.to_string(), scope: scope.into(), owner, reverse_name })
+}
+
 #[cfg(all(test, windows))]
 mod tests {
+    #[test]
+    fn cidr_and_owner() {
+        use super::*;
+        let ip: std::net::Ipv4Addr = "204.79.197.203".parse().unwrap();
+        assert!(in_cidr(ip, "204.79.197.0/24"));
+        assert!(!in_cidr(ip, "204.79.198.0/24"));
+        let b: IpBase = serde_json::from_str(&crate::rules::text("explain")).unwrap();
+        assert!(b.ip_owners.iter().any(|o| in_cidr(ip, &o.cidr)));
+    }
+
     use super::*;
 
     #[test]

@@ -1,78 +1,1593 @@
 {
-  "schema_version": 1,
-  "version": "2026.11.24",
-  "kind": "explain",
-  "description": "Explicații pe înțelesul oricui pentru servicii și procese. verdict: vital = nu se oprește niciodată; keep = recomandat pornit; optional = depinde ce folosești; safe_off = se poate opri fără grijă.",
-  "services": {
-    "RpcSs": { "verdict": "vital", "what": { "ro": "„Centrala telefonică” a Windows: aproape toate componentele vorbesc între ele prin el.", "en": "Windows' “telephone exchange”: almost every component talks to the others through it." }, "off": { "ro": "Windows nu mai pornește corect. Nu se poate opri.", "en": "Windows can no longer start properly. It cannot be turned off." } },
-    "DcomLaunch": { "verdict": "vital", "what": { "ro": "Pornește componentele de sistem la cerere (COM/DCOM).", "en": "Starts system components on demand (COM/DCOM)." }, "off": { "ro": "Sistemul se blochează.", "en": "The system stops working." } },
-    "EventLog": { "verdict": "vital", "what": { "ro": "Jurnalul de evenimente: notează erorile și activitatea Windows.", "en": "Event log: records Windows errors and activity." }, "off": { "ro": "Nu mai vezi ce s-a întâmplat la o problemă; multe servicii depind de el.", "en": "You can no longer see what happened when something fails; many services depend on it." } },
-    "Dhcp": { "verdict": "vital", "what": { "ro": "Primește automat adresa de rețea de la router.", "en": "Gets the network address automatically from the router." }, "off": { "ro": "Pierzi internetul.", "en": "You lose internet access." } },
-    "Dnscache": { "verdict": "vital", "what": { "ro": "Traduce numele site-urilor (ex. google.com) în adrese și le ține minte.", "en": "Translates site names (e.g. google.com) into addresses and remembers them." }, "off": { "ro": "Internetul devine lent sau nu mai merge.", "en": "Internet becomes slow or stops working." } },
-    "BFE": { "verdict": "vital", "what": { "ro": "Motorul de filtrare a traficului, pe care stă firewall-ul.", "en": "Traffic filtering engine the firewall runs on." }, "off": { "ro": "Firewall-ul se oprește: PC-ul rămâne descoperit.", "en": "The firewall stops: the PC is left exposed." } },
-    "MpsSvc": { "verdict": "vital", "what": { "ro": "Windows Firewall.", "en": "Windows Firewall." }, "off": { "ro": "PC-ul rămâne descoperit în rețea.", "en": "The PC is left exposed on the network." } },
-    "WinDefend": { "verdict": "vital", "what": { "ro": "Antivirusul Microsoft Defender.", "en": "Microsoft Defender antivirus." }, "off": { "ro": "Fără protecție antivirus (doar dacă ai alt antivirus instalat).", "en": "No antivirus protection (only if you have another antivirus installed)." } },
-    "wuauserv": { "verdict": "vital", "what": { "ro": "Windows Update: aduce actualizările de securitate.", "en": "Windows Update: brings security updates." }, "off": { "ro": "PC-ul rămâne cu găurile de securitate neacoperite. PioCare nu îl oprește niciodată.", "en": "The PC is left with security holes unpatched. PioCare never turns it off." } },
-    "BITS": { "verdict": "vital", "what": { "ro": "Descarcă în fundal, fără să încurce navigarea (folosit de Windows Update).", "en": "Downloads in the background without slowing browsing (used by Windows Update)." }, "off": { "ro": "Actualizările nu se mai descarcă.", "en": "Updates stop downloading." } },
-    "AudioSrv": { "verdict": "vital", "what": { "ro": "Sunetul Windows.", "en": "Windows audio." }, "off": { "ro": "Nu mai ai sunet.", "en": "No more sound." } },
-    "Audiosrv": { "verdict": "vital", "what": { "ro": "Sunetul Windows.", "en": "Windows audio." }, "off": { "ro": "Nu mai ai sunet.", "en": "No more sound." } },
-    "Spooler": { "verdict": "optional", "what": { "ro": "Coada de tipărire: trimite documentele la imprimantă.", "en": "Print queue: sends documents to the printer." }, "off": { "ro": "Nu mai poți tipări, nici în PDF. Dacă nu ai imprimantă, oprirea închide și o cale de atac.", "en": "You can no longer print, not even to PDF. If you have no printer, turning it off also closes an attack path." } },
-    "DiagTrack": { "verdict": "safe_off", "what": { "ro": "Telemetria Microsoft: trimite date despre cum folosești PC-ul.", "en": "Microsoft telemetry: sends data about how you use the PC." }, "off": { "ro": "Nimic vizibil. Mai puține date trimise și puțin mai puțină încărcare.", "en": "Nothing visible. Less data sent and slightly less load." } },
-    "RemoteRegistry": { "verdict": "safe_off", "what": { "ro": "Permite altui calculator să-ți modifice registrul prin rețea.", "en": "Lets another computer change your registry over the network." }, "off": { "ro": "Nimic pentru un utilizator obișnuit; crește siguranța.", "en": "Nothing for a normal user; improves safety." } },
-    "WSearch": { "verdict": "optional", "what": { "ro": "Indexează fișierele ca să le găsești repede din Start.", "en": "Indexes files so you can find them quickly from Start." }, "off": { "ro": "Căutarea merge, dar mai încet. Discul lucrează mai puțin.", "en": "Search still works, but more slowly. The disk works less." } },
-    "SysMain": { "verdict": "keep", "what": { "ro": "Încarcă din timp programele folosite des (fost Superfetch).", "en": "Preloads frequently used programs (formerly Superfetch)." }, "off": { "ro": "Pe disc clasic (HDD) programele pornesc mai greu. Pe SSD diferența e mică.", "en": "On a classic hard disk programs start slower. On an SSD the difference is small." } },
-    "TermService": { "verdict": "optional", "what": { "ro": "Desktop la distanță: alții se pot conecta la acest PC.", "en": "Remote Desktop: others can connect to this PC." }, "off": { "ro": "Nimeni nu se mai poate conecta de la distanță (mai sigur dacă nu folosești).", "en": "Nobody can connect remotely (safer if you don't use it)." } },
-    "bthserv": { "verdict": "optional", "what": { "ro": "Suportul Bluetooth.", "en": "Bluetooth support." }, "off": { "ro": "Căștile, mouse-ul sau telefonul prin Bluetooth nu mai merg.", "en": "Bluetooth headphones, mice or phones stop working." } },
-    "XblAuthManager": { "verdict": "optional", "what": { "ro": "Conectarea la Xbox Live pentru jocuri.", "en": "Xbox Live sign-in for games." }, "off": { "ro": "Jocurile Xbox / Microsoft Store nu se mai conectează online.", "en": "Xbox / Microsoft Store games no longer sign in online." } },
-    "WerSvc": { "verdict": "safe_off", "what": { "ro": "Trimite rapoarte de erori la Microsoft.", "en": "Sends error reports to Microsoft." }, "off": { "ro": "Nimic vizibil pentru tine.", "en": "Nothing visible to you." } },
-    "Themes": { "verdict": "vital", "what": { "ro": "Aspectul ferestrelor și temele Windows.", "en": "Window appearance and Windows themes." }, "off": { "ro": "Windows arată „clasic” și unele părți nu se mai afișează corect.", "en": "Windows looks “classic” and some parts no longer display correctly." } },
-    "Schedule": { "verdict": "vital", "what": { "ro": "Programatorul de activități: rulează sarcini la anumite ore.", "en": "Task Scheduler: runs tasks at set times." }, "off": { "ro": "Multe întrețineri automate și actualizări nu mai rulează.", "en": "Many automatic maintenance tasks and updates stop running." } },
-    "Winmgmt": { "verdict": "vital", "what": { "ro": "WMI: prin el programele află informații despre sistem.", "en": "WMI: how programs get information about the system." }, "off": { "ro": "Multe programe și setări nu mai funcționează.", "en": "Many programs and settings stop working." } },
-    "CryptSvc": { "verdict": "vital", "what": { "ro": "Verifică semnăturile digitale și certificatele.", "en": "Checks digital signatures and certificates." }, "off": { "ro": "Actualizările și site-urile securizate nu mai merg corect.", "en": "Updates and secure websites stop working properly." } },
-    "PlugPlay": { "verdict": "vital", "what": { "ro": "Recunoaște dispozitivele conectate (USB, imprimante, monitoare).", "en": "Recognizes connected devices (USB, printers, monitors)." }, "off": { "ro": "Dispozitivele noi nu mai sunt recunoscute.", "en": "New devices are no longer recognized." } },
-    "ProfSvc": { "verdict": "vital", "what": { "ro": "Încarcă profilul tău de utilizator la autentificare.", "en": "Loads your user profile at sign-in." }, "off": { "ro": "Nu te mai poți autentifica normal.", "en": "You can no longer sign in normally." } },
-    "LanmanWorkstation": { "verdict": "vital", "what": { "ro": "Accesul la foldere și imprimante din rețea.", "en": "Access to network folders and printers." }, "off": { "ro": "Nu mai vezi folderele și imprimantele din rețea.", "en": "You no longer see network folders and printers." } },
-    "LanmanServer": { "verdict": "optional", "what": { "ro": "Permite altora din rețea să-ți vadă folderele partajate.", "en": "Lets others on the network see your shared folders." }, "off": { "ro": "Nu mai poți partaja foldere sau imprimante cu alte PC-uri.", "en": "You can no longer share folders or printers with other PCs." } },
-    "WlanSvc": { "verdict": "vital", "what": { "ro": "Conectarea prin Wi-Fi.", "en": "Wi-Fi connections." }, "off": { "ro": "Wi-Fi-ul nu mai merge.", "en": "Wi-Fi stops working." } },
-    "NlaSvc": { "verdict": "vital", "what": { "ro": "Recunoaște rețeaua la care ești conectat (acasă / publică).", "en": "Identifies the network you are on (home / public)." }, "off": { "ro": "Windows crede că nu ai internet; firewall-ul nu mai știe ce reguli să aplice.", "en": "Windows thinks you have no internet; the firewall no longer knows which rules to apply." } },
-    "VSS": { "verdict": "vital", "what": { "ro": "Copii de umbră: folosit de punctele de restaurare și backup.", "en": "Shadow copies: used by restore points and backups." }, "off": { "ro": "Punctele de restaurare și unele backup-uri nu mai merg.", "en": "Restore points and some backups stop working." } },
-    "TrustedInstaller": { "verdict": "vital", "what": { "ro": "Instalează actualizările și componentele Windows.", "en": "Installs updates and Windows components." }, "off": { "ro": "Actualizările nu se mai instalează.", "en": "Updates can no longer be installed." } },
-    "Appinfo": { "verdict": "vital", "what": { "ro": "Fereastra de confirmare „Permiți acestei aplicații…” (UAC).", "en": "The “Do you want to allow this app…” confirmation (UAC)." }, "off": { "ro": "Nu mai poți rula nimic ca administrator.", "en": "You can no longer run anything as administrator." } },
-    "MapsBroker": { "verdict": "safe_off", "what": { "ro": "Actualizează hărțile descărcate pentru aplicația Hărți.", "en": "Updates downloaded maps for the Maps app." }, "off": { "ro": "Nimic, dacă nu folosești hărți offline.", "en": "Nothing, unless you use offline maps." } },
-    "Fax": { "verdict": "optional", "what": { "ro": "Trimite și primește fax prin modem.", "en": "Sends and receives faxes via modem." }, "off": { "ro": "Nimic, dacă nu folosești fax.", "en": "Nothing, unless you use fax." } },
-    "WbioSrvc": { "verdict": "optional", "what": { "ro": "Amprenta și recunoașterea feței (Windows Hello).", "en": "Fingerprint and face recognition (Windows Hello)." }, "off": { "ro": "Te autentifici doar cu parola sau PIN-ul.", "en": "You sign in only with password or PIN." } },
-    "lfsvc": { "verdict": "optional", "what": { "ro": "Locația geografică pentru aplicații.", "en": "Geographic location for apps." }, "off": { "ro": "Aplicațiile nu mai știu unde ești (vreme, hărți).", "en": "Apps no longer know where you are (weather, maps)." } },
-    "SSDPSRV": { "verdict": "optional", "what": { "ro": "Descoperă dispozitive din rețea (TV-uri, imprimante, routere).", "en": "Discovers network devices (TVs, printers, routers)." }, "off": { "ro": "Dispozitivele din rețea nu mai apar automat.", "en": "Network devices no longer show up automatically." } },
-    "WinRM": { "verdict": "safe_off", "what": { "ro": "Administrare la distanță prin PowerShell.", "en": "Remote management via PowerShell." }, "off": { "ro": "Nimic pentru un PC personal.", "en": "Nothing for a personal PC." } },
-    "TrkWks": { "verdict": "safe_off", "what": { "ro": "Urmărește scurtăturile către fișiere mutate în rețea.", "en": "Tracks shortcuts to files moved on the network." }, "off": { "ro": "Nimic pe un PC de acasă.", "en": "Nothing on a home PC." } },
-    "PcaSvc": { "verdict": "keep", "what": { "ro": "Asistentul de compatibilitate pentru programe vechi.", "en": "Compatibility assistant for old programs." }, "off": { "ro": "Programele vechi pot porni greșit fără avertisment.", "en": "Old programs may start incorrectly without warning." } },
-    "SecurityHealthService": { "verdict": "vital", "what": { "ro": "Centrul de securitate Windows (starea protecției).", "en": "Windows Security center (protection status)." }, "off": { "ro": "Nu mai vezi avertizările de securitate.", "en": "You no longer see security warnings." } },
-    "vmms": { "verdict": "vital", "what": { "ro": "Hyper-V: rulează mașinile virtuale.", "en": "Hyper-V: runs virtual machines." }, "off": { "ro": "Mașinile virtuale nu mai pornesc.", "en": "Virtual machines no longer start." } }
+ "schema_version": 1,
+ "version": "2026.11.24.3",
+ "kind": "explain",
+ "description": "Explicații pe înțelesul oricui pentru servicii și procese. verdict: vital = nu se oprește niciodată; keep = recomandat pornit; optional = depinde ce folosești; safe_off = se poate opri fără grijă.",
+ "services": {
+  "RpcSs": {
+   "verdict": "vital",
+   "what": {
+    "ro": "„Centrala telefonică” a Windows: aproape toate componentele vorbesc între ele prin el.",
+    "en": "Windows' “telephone exchange”: almost every component talks to the others through it."
+   },
+   "off": {
+    "ro": "Windows nu mai pornește corect. Nu se poate opri.",
+    "en": "Windows can no longer start properly. It cannot be turned off."
+   }
   },
-  "programs": {
-    "svchost": { "verdict": "vital", "what": { "ro": "„Gazda” serviciilor Windows: un singur program care rulează multe servicii. E normal să apară de mai multe ori.", "en": "Windows' service “host”: one program that runs many services. It's normal to see it several times." }, "off": { "ro": "Nu se blochează: ar tăia rețeaua sau actualizările.", "en": "Do not block it: it would cut networking or updates." } },
-    "system": { "verdict": "vital", "what": { "ro": "Nucleul Windows.", "en": "The Windows kernel." }, "off": { "ro": "Nu se atinge.", "en": "Never touch it." } },
-    "lsass": { "verdict": "vital", "what": { "ro": "Verifică parolele și autentificarea.", "en": "Checks passwords and sign-in." }, "off": { "ro": "Nu se atinge.", "en": "Never touch it." } },
-    "explorer": { "verdict": "vital", "what": { "ro": "Desktopul, bara de jos și fereastra de fișiere.", "en": "The desktop, taskbar and file windows." }, "off": { "ro": "Dispare desktopul.", "en": "The desktop disappears." } },
-    "msedge": { "verdict": "keep", "what": { "ro": "Browserul Microsoft Edge. Poate rula și în fundal, chiar după ce l-ai închis.", "en": "The Microsoft Edge browser. It can keep running in the background even after you close it." }, "off": { "ro": "Blocat, Edge nu mai deschide site-uri.", "en": "Blocked, Edge can no longer open websites." } },
-    "chrome": { "verdict": "keep", "what": { "ro": "Browserul Google Chrome.", "en": "The Google Chrome browser." }, "off": { "ro": "Blocat, Chrome nu mai deschide site-uri.", "en": "Blocked, Chrome can no longer open websites." } },
-    "firefox": { "verdict": "keep", "what": { "ro": "Browserul Mozilla Firefox.", "en": "The Mozilla Firefox browser." }, "off": { "ro": "Blocat, Firefox nu mai deschide site-uri.", "en": "Blocked, Firefox can no longer open websites." } },
-    "opera": { "verdict": "keep", "what": { "ro": "Browserul Opera.", "en": "The Opera browser." }, "off": { "ro": "Blocat, Opera nu mai deschide site-uri.", "en": "Blocked, Opera can no longer open websites." } },
-    "brave": { "verdict": "keep", "what": { "ro": "Browserul Brave.", "en": "The Brave browser." }, "off": { "ro": "Blocat, Brave nu mai deschide site-uri.", "en": "Blocked, Brave can no longer open websites." } },
-    "smartscreen": { "verdict": "vital", "what": { "ro": "SmartScreen: verifică fișierele descărcate și site-urile periculoase.", "en": "SmartScreen: checks downloaded files and dangerous websites." }, "off": { "ro": "Blocat, pierzi o protecție importantă.", "en": "Blocked, you lose an important protection." } },
-    "msmpeng": { "verdict": "vital", "what": { "ro": "Motorul antivirus Microsoft Defender.", "en": "Microsoft Defender antivirus engine." }, "off": { "ro": "Blocat, antivirusul nu-și mai actualizează semnăturile.", "en": "Blocked, the antivirus can no longer update its signatures." } },
-    "onedrive": { "verdict": "optional", "what": { "ro": "Sincronizează fișierele cu OneDrive (cloud Microsoft).", "en": "Syncs files with OneDrive (Microsoft cloud)." }, "off": { "ro": "Blocat, fișierele nu se mai sincronizează.", "en": "Blocked, files no longer sync." } },
-    "searchapp": { "verdict": "keep", "what": { "ro": "Căutarea din meniul Start (cu rezultate și de pe internet).", "en": "Start menu search (including web results)." }, "off": { "ro": "Blocat, căutarea locală merge, dar fără rezultate de pe internet.", "en": "Blocked, local search works but without web results." } },
-    "searchhost": { "verdict": "keep", "what": { "ro": "Căutarea din meniul Start (Windows 11).", "en": "Start menu search (Windows 11)." }, "off": { "ro": "Blocat, căutarea locală merge, dar fără rezultate de pe internet.", "en": "Blocked, local search works but without web results." } },
-    "teams": { "verdict": "optional", "what": { "ro": "Microsoft Teams: chat și apeluri video.", "en": "Microsoft Teams: chat and video calls." }, "off": { "ro": "Blocat, Teams nu mai funcționează.", "en": "Blocked, Teams stops working." } },
-    "ms-teams": { "verdict": "optional", "what": { "ro": "Microsoft Teams: chat și apeluri video.", "en": "Microsoft Teams: chat and video calls." }, "off": { "ro": "Blocat, Teams nu mai funcționează.", "en": "Blocked, Teams stops working." } },
-    "discord": { "verdict": "optional", "what": { "ro": "Discord: chat, voce și comunități.", "en": "Discord: chat, voice and communities." }, "off": { "ro": "Blocat, Discord nu se mai conectează.", "en": "Blocked, Discord can no longer connect." } },
-    "steam": { "verdict": "optional", "what": { "ro": "Platforma de jocuri Steam.", "en": "Steam gaming platform." }, "off": { "ro": "Blocat, Steam și jocurile online nu mai merg.", "en": "Blocked, Steam and online games stop working." } },
-    "spoolsv": { "verdict": "optional", "what": { "ro": "Coada de tipărire.", "en": "Print queue." }, "off": { "ro": "Blocat, imprimantele de rețea nu mai merg.", "en": "Blocked, network printers stop working." } },
-    "wininit": { "verdict": "vital", "what": { "ro": "Pornește Windows.", "en": "Starts Windows." }, "off": { "ro": "Nu se atinge.", "en": "Never touch it." } },
-    "services": { "verdict": "vital", "what": { "ro": "Managerul de servicii Windows.", "en": "Windows service manager." }, "off": { "ro": "Nu se atinge.", "en": "Never touch it." } },
-    "mshta": { "verdict": "safe_off", "what": { "ro": "Rulează aplicații HTML vechi; des folosit de viruși.", "en": "Runs old HTML applications; often abused by malware." }, "off": { "ro": "Blocat pe internet: nimic pentru un utilizator obișnuit.", "en": "Blocked from the internet: nothing for a normal user." } },
-    "powershell": { "verdict": "keep", "what": { "ro": "Linia de comandă avansată a Windows. Folosită și de programe legitime și de PioCare.", "en": "Windows' advanced command line. Used by legitimate programs and by PioCare." }, "off": { "ro": "Nu-l bloca fără motiv: multe instalări și actualizări îl folosesc.", "en": "Don't block it without reason: many installers and updates use it." } },
-    "piocare": { "verdict": "keep", "what": { "ro": "PioCare, acest program.", "en": "PioCare, this program." }, "off": { "ro": "PioCare nu folosește internetul; doar citește conexiunile celorlalte programe.", "en": "PioCare does not use the internet; it only reads other programs' connections." } }
+  "DcomLaunch": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Pornește componentele de sistem la cerere (COM/DCOM).",
+    "en": "Starts system components on demand (COM/DCOM)."
+   },
+   "off": {
+    "ro": "Sistemul se blochează.",
+    "en": "The system stops working."
+   }
+  },
+  "EventLog": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Jurnalul de evenimente: notează erorile și activitatea Windows.",
+    "en": "Event log: records Windows errors and activity."
+   },
+   "off": {
+    "ro": "Nu mai vezi ce s-a întâmplat la o problemă; multe servicii depind de el.",
+    "en": "You can no longer see what happened when something fails; many services depend on it."
+   }
+  },
+  "Dhcp": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Primește automat adresa de rețea de la router.",
+    "en": "Gets the network address automatically from the router."
+   },
+   "off": {
+    "ro": "Pierzi internetul.",
+    "en": "You lose internet access."
+   }
+  },
+  "Dnscache": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Traduce numele site-urilor (ex. google.com) în adrese și le ține minte.",
+    "en": "Translates site names (e.g. google.com) into addresses and remembers them."
+   },
+   "off": {
+    "ro": "Internetul devine lent sau nu mai merge.",
+    "en": "Internet becomes slow or stops working."
+   }
+  },
+  "BFE": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Motorul de filtrare a traficului, pe care stă firewall-ul.",
+    "en": "Traffic filtering engine the firewall runs on."
+   },
+   "off": {
+    "ro": "Firewall-ul se oprește: PC-ul rămâne descoperit.",
+    "en": "The firewall stops: the PC is left exposed."
+   }
+  },
+  "MpsSvc": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Windows Firewall.",
+    "en": "Windows Firewall."
+   },
+   "off": {
+    "ro": "PC-ul rămâne descoperit în rețea.",
+    "en": "The PC is left exposed on the network."
+   }
+  },
+  "WinDefend": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Antivirusul Microsoft Defender.",
+    "en": "Microsoft Defender antivirus."
+   },
+   "off": {
+    "ro": "Fără protecție antivirus (doar dacă ai alt antivirus instalat).",
+    "en": "No antivirus protection (only if you have another antivirus installed)."
+   }
+  },
+  "wuauserv": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Windows Update: aduce actualizările de securitate.",
+    "en": "Windows Update: brings security updates."
+   },
+   "off": {
+    "ro": "PC-ul rămâne cu găurile de securitate neacoperite. PioCare nu îl oprește niciodată.",
+    "en": "The PC is left with security holes unpatched. PioCare never turns it off."
+   }
+  },
+  "BITS": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Descarcă în fundal, fără să încurce navigarea (folosit de Windows Update).",
+    "en": "Downloads in the background without slowing browsing (used by Windows Update)."
+   },
+   "off": {
+    "ro": "Actualizările nu se mai descarcă.",
+    "en": "Updates stop downloading."
+   }
+  },
+  "AudioSrv": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Sunetul Windows.",
+    "en": "Windows audio."
+   },
+   "off": {
+    "ro": "Nu mai ai sunet.",
+    "en": "No more sound."
+   }
+  },
+  "Audiosrv": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Sunetul Windows.",
+    "en": "Windows audio."
+   },
+   "off": {
+    "ro": "Nu mai ai sunet.",
+    "en": "No more sound."
+   }
+  },
+  "Spooler": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Coada de tipărire: trimite documentele la imprimantă.",
+    "en": "Print queue: sends documents to the printer."
+   },
+   "off": {
+    "ro": "Nu mai poți tipări, nici în PDF. Dacă nu ai imprimantă, oprirea închide și o cale de atac.",
+    "en": "You can no longer print, not even to PDF. If you have no printer, turning it off also closes an attack path."
+   }
+  },
+  "DiagTrack": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Telemetria Microsoft: trimite date despre cum folosești PC-ul.",
+    "en": "Microsoft telemetry: sends data about how you use the PC."
+   },
+   "off": {
+    "ro": "Nimic vizibil. Mai puține date trimise și puțin mai puțină încărcare.",
+    "en": "Nothing visible. Less data sent and slightly less load."
+   }
+  },
+  "RemoteRegistry": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Permite altui calculator să-ți modifice registrul prin rețea.",
+    "en": "Lets another computer change your registry over the network."
+   },
+   "off": {
+    "ro": "Nimic pentru un utilizator obișnuit; crește siguranța.",
+    "en": "Nothing for a normal user; improves safety."
+   }
+  },
+  "WSearch": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Indexează fișierele ca să le găsești repede din Start.",
+    "en": "Indexes files so you can find them quickly from Start."
+   },
+   "off": {
+    "ro": "Căutarea merge, dar mai încet. Discul lucrează mai puțin.",
+    "en": "Search still works, but more slowly. The disk works less."
+   }
+  },
+  "SysMain": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Încarcă din timp programele folosite des (fost Superfetch).",
+    "en": "Preloads frequently used programs (formerly Superfetch)."
+   },
+   "off": {
+    "ro": "Pe disc clasic (HDD) programele pornesc mai greu. Pe SSD diferența e mică.",
+    "en": "On a classic hard disk programs start slower. On an SSD the difference is small."
+   }
+  },
+  "TermService": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Desktop la distanță: alții se pot conecta la acest PC.",
+    "en": "Remote Desktop: others can connect to this PC."
+   },
+   "off": {
+    "ro": "Nimeni nu se mai poate conecta de la distanță (mai sigur dacă nu folosești).",
+    "en": "Nobody can connect remotely (safer if you don't use it)."
+   }
+  },
+  "bthserv": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Suportul Bluetooth.",
+    "en": "Bluetooth support."
+   },
+   "off": {
+    "ro": "Căștile, mouse-ul sau telefonul prin Bluetooth nu mai merg.",
+    "en": "Bluetooth headphones, mice or phones stop working."
+   }
+  },
+  "XblAuthManager": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Conectarea la Xbox Live pentru jocuri.",
+    "en": "Xbox Live sign-in for games."
+   },
+   "off": {
+    "ro": "Jocurile Xbox / Microsoft Store nu se mai conectează online.",
+    "en": "Xbox / Microsoft Store games no longer sign in online."
+   }
+  },
+  "WerSvc": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Trimite rapoarte de erori la Microsoft.",
+    "en": "Sends error reports to Microsoft."
+   },
+   "off": {
+    "ro": "Nimic vizibil pentru tine.",
+    "en": "Nothing visible to you."
+   }
+  },
+  "Themes": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Aspectul ferestrelor și temele Windows.",
+    "en": "Window appearance and Windows themes."
+   },
+   "off": {
+    "ro": "Windows arată „clasic” și unele părți nu se mai afișează corect.",
+    "en": "Windows looks “classic” and some parts no longer display correctly."
+   }
+  },
+  "Schedule": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Programatorul de activități: rulează sarcini la anumite ore.",
+    "en": "Task Scheduler: runs tasks at set times."
+   },
+   "off": {
+    "ro": "Multe întrețineri automate și actualizări nu mai rulează.",
+    "en": "Many automatic maintenance tasks and updates stop running."
+   }
+  },
+  "Winmgmt": {
+   "verdict": "vital",
+   "what": {
+    "ro": "WMI: prin el programele află informații despre sistem.",
+    "en": "WMI: how programs get information about the system."
+   },
+   "off": {
+    "ro": "Multe programe și setări nu mai funcționează.",
+    "en": "Many programs and settings stop working."
+   }
+  },
+  "CryptSvc": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Verifică semnăturile digitale și certificatele.",
+    "en": "Checks digital signatures and certificates."
+   },
+   "off": {
+    "ro": "Actualizările și site-urile securizate nu mai merg corect.",
+    "en": "Updates and secure websites stop working properly."
+   }
+  },
+  "PlugPlay": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Recunoaște dispozitivele conectate (USB, imprimante, monitoare).",
+    "en": "Recognizes connected devices (USB, printers, monitors)."
+   },
+   "off": {
+    "ro": "Dispozitivele noi nu mai sunt recunoscute.",
+    "en": "New devices are no longer recognized."
+   }
+  },
+  "ProfSvc": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Încarcă profilul tău de utilizator la autentificare.",
+    "en": "Loads your user profile at sign-in."
+   },
+   "off": {
+    "ro": "Nu te mai poți autentifica normal.",
+    "en": "You can no longer sign in normally."
+   }
+  },
+  "LanmanWorkstation": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Accesul la foldere și imprimante din rețea.",
+    "en": "Access to network folders and printers."
+   },
+   "off": {
+    "ro": "Nu mai vezi folderele și imprimantele din rețea.",
+    "en": "You no longer see network folders and printers."
+   }
+  },
+  "LanmanServer": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Permite altora din rețea să-ți vadă folderele partajate.",
+    "en": "Lets others on the network see your shared folders."
+   },
+   "off": {
+    "ro": "Nu mai poți partaja foldere sau imprimante cu alte PC-uri.",
+    "en": "You can no longer share folders or printers with other PCs."
+   }
+  },
+  "WlanSvc": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Conectarea prin Wi-Fi.",
+    "en": "Wi-Fi connections."
+   },
+   "off": {
+    "ro": "Wi-Fi-ul nu mai merge.",
+    "en": "Wi-Fi stops working."
+   }
+  },
+  "NlaSvc": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Recunoaște rețeaua la care ești conectat (acasă / publică).",
+    "en": "Identifies the network you are on (home / public)."
+   },
+   "off": {
+    "ro": "Windows crede că nu ai internet; firewall-ul nu mai știe ce reguli să aplice.",
+    "en": "Windows thinks you have no internet; the firewall no longer knows which rules to apply."
+   }
+  },
+  "VSS": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Copii de umbră: folosit de punctele de restaurare și backup.",
+    "en": "Shadow copies: used by restore points and backups."
+   },
+   "off": {
+    "ro": "Punctele de restaurare și unele backup-uri nu mai merg.",
+    "en": "Restore points and some backups stop working."
+   }
+  },
+  "TrustedInstaller": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Instalează actualizările și componentele Windows.",
+    "en": "Installs updates and Windows components."
+   },
+   "off": {
+    "ro": "Actualizările nu se mai instalează.",
+    "en": "Updates can no longer be installed."
+   }
+  },
+  "Appinfo": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Fereastra de confirmare „Permiți acestei aplicații…” (UAC).",
+    "en": "The “Do you want to allow this app…” confirmation (UAC)."
+   },
+   "off": {
+    "ro": "Nu mai poți rula nimic ca administrator.",
+    "en": "You can no longer run anything as administrator."
+   }
+  },
+  "MapsBroker": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Actualizează hărțile descărcate pentru aplicația Hărți.",
+    "en": "Updates downloaded maps for the Maps app."
+   },
+   "off": {
+    "ro": "Nimic, dacă nu folosești hărți offline.",
+    "en": "Nothing, unless you use offline maps."
+   }
+  },
+  "Fax": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Trimite și primește fax prin modem.",
+    "en": "Sends and receives faxes via modem."
+   },
+   "off": {
+    "ro": "Nimic, dacă nu folosești fax.",
+    "en": "Nothing, unless you use fax."
+   }
+  },
+  "WbioSrvc": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Amprenta și recunoașterea feței (Windows Hello).",
+    "en": "Fingerprint and face recognition (Windows Hello)."
+   },
+   "off": {
+    "ro": "Te autentifici doar cu parola sau PIN-ul.",
+    "en": "You sign in only with password or PIN."
+   }
+  },
+  "lfsvc": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Locația geografică pentru aplicații.",
+    "en": "Geographic location for apps."
+   },
+   "off": {
+    "ro": "Aplicațiile nu mai știu unde ești (vreme, hărți).",
+    "en": "Apps no longer know where you are (weather, maps)."
+   }
+  },
+  "SSDPSRV": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Descoperă dispozitive din rețea (TV-uri, imprimante, routere).",
+    "en": "Discovers network devices (TVs, printers, routers)."
+   },
+   "off": {
+    "ro": "Dispozitivele din rețea nu mai apar automat.",
+    "en": "Network devices no longer show up automatically."
+   }
+  },
+  "WinRM": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Administrare la distanță prin PowerShell.",
+    "en": "Remote management via PowerShell."
+   },
+   "off": {
+    "ro": "Nimic pentru un PC personal.",
+    "en": "Nothing for a personal PC."
+   }
+  },
+  "TrkWks": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Urmărește scurtăturile către fișiere mutate în rețea.",
+    "en": "Tracks shortcuts to files moved on the network."
+   },
+   "off": {
+    "ro": "Nimic pe un PC de acasă.",
+    "en": "Nothing on a home PC."
+   }
+  },
+  "PcaSvc": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Asistentul de compatibilitate pentru programe vechi.",
+    "en": "Compatibility assistant for old programs."
+   },
+   "off": {
+    "ro": "Programele vechi pot porni greșit fără avertisment.",
+    "en": "Old programs may start incorrectly without warning."
+   }
+  },
+  "SecurityHealthService": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Centrul de securitate Windows (starea protecției).",
+    "en": "Windows Security center (protection status)."
+   },
+   "off": {
+    "ro": "Nu mai vezi avertizările de securitate.",
+    "en": "You no longer see security warnings."
+   }
+  },
+  "vmms": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Hyper-V: rulează mașinile virtuale.",
+    "en": "Hyper-V: runs virtual machines."
+   },
+   "off": {
+    "ro": "Mașinile virtuale nu mai pornesc.",
+    "en": "Virtual machines no longer start."
+   }
   }
+ },
+ "programs": {
+  "svchost": {
+   "verdict": "vital",
+   "what": {
+    "ro": "„Gazda” serviciilor Windows: un singur program care rulează multe servicii. E normal să apară de mai multe ori.",
+    "en": "Windows' service “host”: one program that runs many services. It's normal to see it several times."
+   },
+   "off": {
+    "ro": "Nu se blochează: ar tăia rețeaua sau actualizările.",
+    "en": "Do not block it: it would cut networking or updates."
+   }
+  },
+  "system": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Nucleul Windows.",
+    "en": "The Windows kernel."
+   },
+   "off": {
+    "ro": "Nu se atinge.",
+    "en": "Never touch it."
+   }
+  },
+  "lsass": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Verifică parolele și autentificarea.",
+    "en": "Checks passwords and sign-in."
+   },
+   "off": {
+    "ro": "Nu se atinge.",
+    "en": "Never touch it."
+   }
+  },
+  "explorer": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Desktopul, bara de jos și fereastra de fișiere.",
+    "en": "The desktop, taskbar and file windows."
+   },
+   "off": {
+    "ro": "Dispare desktopul.",
+    "en": "The desktop disappears."
+   }
+  },
+  "msedge": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Browserul Microsoft Edge. Poate rula și în fundal, chiar după ce l-ai închis.",
+    "en": "The Microsoft Edge browser. It can keep running in the background even after you close it."
+   },
+   "off": {
+    "ro": "Blocat, Edge nu mai deschide site-uri.",
+    "en": "Blocked, Edge can no longer open websites."
+   }
+  },
+  "chrome": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Browserul Google Chrome.",
+    "en": "The Google Chrome browser."
+   },
+   "off": {
+    "ro": "Blocat, Chrome nu mai deschide site-uri.",
+    "en": "Blocked, Chrome can no longer open websites."
+   }
+  },
+  "firefox": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Browserul Mozilla Firefox.",
+    "en": "The Mozilla Firefox browser."
+   },
+   "off": {
+    "ro": "Blocat, Firefox nu mai deschide site-uri.",
+    "en": "Blocked, Firefox can no longer open websites."
+   }
+  },
+  "opera": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Browserul Opera.",
+    "en": "The Opera browser."
+   },
+   "off": {
+    "ro": "Blocat, Opera nu mai deschide site-uri.",
+    "en": "Blocked, Opera can no longer open websites."
+   }
+  },
+  "brave": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Browserul Brave.",
+    "en": "The Brave browser."
+   },
+   "off": {
+    "ro": "Blocat, Brave nu mai deschide site-uri.",
+    "en": "Blocked, Brave can no longer open websites."
+   }
+  },
+  "smartscreen": {
+   "verdict": "vital",
+   "what": {
+    "ro": "SmartScreen: verifică fișierele descărcate și site-urile periculoase.",
+    "en": "SmartScreen: checks downloaded files and dangerous websites."
+   },
+   "off": {
+    "ro": "Blocat, pierzi o protecție importantă.",
+    "en": "Blocked, you lose an important protection."
+   }
+  },
+  "msmpeng": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Motorul antivirus Microsoft Defender.",
+    "en": "Microsoft Defender antivirus engine."
+   },
+   "off": {
+    "ro": "Blocat, antivirusul nu-și mai actualizează semnăturile.",
+    "en": "Blocked, the antivirus can no longer update its signatures."
+   }
+  },
+  "onedrive": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Sincronizează fișierele cu OneDrive (cloud Microsoft).",
+    "en": "Syncs files with OneDrive (Microsoft cloud)."
+   },
+   "off": {
+    "ro": "Blocat, fișierele nu se mai sincronizează.",
+    "en": "Blocked, files no longer sync."
+   }
+  },
+  "searchapp": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Căutarea din meniul Start (cu rezultate și de pe internet).",
+    "en": "Start menu search (including web results)."
+   },
+   "off": {
+    "ro": "Blocat, căutarea locală merge, dar fără rezultate de pe internet.",
+    "en": "Blocked, local search works but without web results."
+   }
+  },
+  "searchhost": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Căutarea din meniul Start (Windows 11).",
+    "en": "Start menu search (Windows 11)."
+   },
+   "off": {
+    "ro": "Blocat, căutarea locală merge, dar fără rezultate de pe internet.",
+    "en": "Blocked, local search works but without web results."
+   }
+  },
+  "teams": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Microsoft Teams: chat și apeluri video.",
+    "en": "Microsoft Teams: chat and video calls."
+   },
+   "off": {
+    "ro": "Blocat, Teams nu mai funcționează.",
+    "en": "Blocked, Teams stops working."
+   }
+  },
+  "ms-teams": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Microsoft Teams: chat și apeluri video.",
+    "en": "Microsoft Teams: chat and video calls."
+   },
+   "off": {
+    "ro": "Blocat, Teams nu mai funcționează.",
+    "en": "Blocked, Teams stops working."
+   }
+  },
+  "discord": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Discord: chat, voce și comunități.",
+    "en": "Discord: chat, voice and communities."
+   },
+   "off": {
+    "ro": "Blocat, Discord nu se mai conectează.",
+    "en": "Blocked, Discord can no longer connect."
+   }
+  },
+  "steam": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Platforma de jocuri Steam.",
+    "en": "Steam gaming platform."
+   },
+   "off": {
+    "ro": "Blocat, Steam și jocurile online nu mai merg.",
+    "en": "Blocked, Steam and online games stop working."
+   }
+  },
+  "spoolsv": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Coada de tipărire.",
+    "en": "Print queue."
+   },
+   "off": {
+    "ro": "Blocat, imprimantele de rețea nu mai merg.",
+    "en": "Blocked, network printers stop working."
+   }
+  },
+  "wininit": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Pornește Windows.",
+    "en": "Starts Windows."
+   },
+   "off": {
+    "ro": "Nu se atinge.",
+    "en": "Never touch it."
+   }
+  },
+  "services": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Managerul de servicii Windows.",
+    "en": "Windows service manager."
+   },
+   "off": {
+    "ro": "Nu se atinge.",
+    "en": "Never touch it."
+   }
+  },
+  "mshta": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Rulează aplicații HTML vechi; des folosit de viruși.",
+    "en": "Runs old HTML applications; often abused by malware."
+   },
+   "off": {
+    "ro": "Blocat pe internet: nimic pentru un utilizator obișnuit.",
+    "en": "Blocked from the internet: nothing for a normal user."
+   }
+  },
+  "powershell": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Linia de comandă avansată a Windows. Folosită și de programe legitime și de PioCare.",
+    "en": "Windows' advanced command line. Used by legitimate programs and by PioCare."
+   },
+   "off": {
+    "ro": "Nu-l bloca fără motiv: multe instalări și actualizări îl folosesc.",
+    "en": "Don't block it without reason: many installers and updates use it."
+   }
+  },
+  "piocare": {
+   "verdict": "keep",
+   "what": {
+    "ro": "PioCare, acest program.",
+    "en": "PioCare, this program."
+   },
+   "off": {
+    "ro": "PioCare nu folosește internetul; doar citește conexiunile celorlalte programe.",
+    "en": "PioCare does not use the internet; it only reads other programs' connections."
+   }
+  },
+  "java": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Java (Oracle): mediu de rulare pentru programe scrise în Java (unele programe de proiectare, bănci, jocuri vechi).",
+    "en": "Java (Oracle): runtime for programs written in Java (some design tools, banking apps, older games)."
+   },
+   "off": {
+    "ro": "Dacă niciun program nu-l cere, se poate dezinstala; versiunile vechi de Java sunt o țintă cunoscută pentru atacuri.",
+    "en": "If no program needs it, it can be uninstalled; old Java versions are a known attack target."
+   }
+  },
+  "7-zip": {
+   "verdict": "keep",
+   "what": {
+    "ro": "7-Zip: arhivator gratuit (zip, 7z, rar).",
+    "en": "7-Zip: free archiver (zip, 7z, rar)."
+   },
+   "off": {
+    "ro": "Fără el nu mai deschizi arhivele decât cu ce are Windows (doar zip).",
+    "en": "Without it only zip archives open with Windows' own tool."
+   }
+  },
+  "notepad++": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Notepad++: editor de text avansat.",
+    "en": "Notepad++: advanced text editor."
+   },
+   "off": {
+    "ro": "Nimic grav; rămâne Notepad-ul din Windows.",
+    "en": "Nothing serious; Windows Notepad remains."
+   }
+  },
+  "vlc": {
+   "verdict": "keep",
+   "what": {
+    "ro": "VLC: player video/audio care deschide aproape orice format.",
+    "en": "VLC: video/audio player that opens almost any format."
+   },
+   "off": {
+    "ro": "Unele filme sau formate audio nu se mai deschid.",
+    "en": "Some videos or audio formats will no longer open."
+   }
+  },
+  "libreoffice": {
+   "verdict": "keep",
+   "what": {
+    "ro": "LibreOffice: suită de birou gratuită (texte, tabele, prezentări).",
+    "en": "LibreOffice: free office suite (documents, spreadsheets, presentations)."
+   },
+   "off": {
+    "ro": "Nu mai deschizi documente .docx/.xlsx dacă nu ai alt Office.",
+    "en": "You can't open .docx/.xlsx files unless you have another Office."
+   }
+  },
+  "inkscape": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Inkscape: program de desen vectorial (SVG).",
+    "en": "Inkscape: vector drawing program (SVG)."
+   },
+   "off": {
+    "ro": "Doar dacă nu mai desenezi vectorial.",
+    "en": "Only if you no longer do vector drawing."
+   }
+  },
+  "sketchup": {
+   "verdict": "optional",
+   "what": {
+    "ro": "SketchUp: modelare 3D (construcții, mobilier).",
+    "en": "SketchUp: 3D modelling (buildings, furniture)."
+   },
+   "off": {
+    "ro": "Doar dacă nu mai lucrezi în SketchUp.",
+    "en": "Only if you no longer work in SketchUp."
+   }
+  },
+  "pdf24": {
+   "verdict": "keep",
+   "what": {
+    "ro": "PDF24: unelte PDF gratuite și imprimantă virtuală PDF.",
+    "en": "PDF24: free PDF tools and a virtual PDF printer."
+   },
+   "off": {
+    "ro": "Dispare imprimanta PDF24 și uneltele de PDF.",
+    "en": "The PDF24 printer and PDF tools disappear."
+   }
+  },
+  "googlechrome": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Google Chrome: browser web.",
+    "en": "Google Chrome: web browser."
+   },
+   "off": {
+    "ro": "Pierzi browserul; marcajele rămân în contul Google.",
+    "en": "You lose the browser; bookmarks stay in your Google account."
+   }
+  },
+  "mozillafirefox": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Mozilla Firefox: browser web.",
+    "en": "Mozilla Firefox: web browser."
+   },
+   "off": {
+    "ro": "Pierzi browserul și profilul local (dacă nu ai sincronizare).",
+    "en": "You lose the browser and the local profile (unless synced)."
+   }
+  },
+  "mozillamaintenanceservice": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Serviciul de actualizare Firefox.",
+    "en": "Firefox update service."
+   },
+   "off": {
+    "ro": "Firefox se actualizează mai greu (cere confirmare).",
+    "en": "Firefox updates less smoothly (asks for confirmation)."
+   }
+  },
+  "cursor": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Cursor: editor de cod cu asistent AI.",
+    "en": "Cursor: code editor with an AI assistant."
+   },
+   "off": {
+    "ro": "Doar dacă nu mai programezi cu el.",
+    "en": "Only if you no longer code with it."
+   }
+  },
+  "microsoftvisualstudiocode": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Visual Studio Code: editor de cod Microsoft.",
+    "en": "Visual Studio Code: Microsoft's code editor."
+   },
+   "off": {
+    "ro": "Doar dacă nu mai programezi cu el.",
+    "en": "Only if you no longer code with it."
+   }
+  },
+  "git": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Git: control de versiuni pentru cod (folosit și de PioCare la dezvoltare).",
+    "en": "Git: version control for code."
+   },
+   "off": {
+    "ro": "Proiectele de programare nu mai pot fi sincronizate.",
+    "en": "Programming projects can no longer be synced."
+   }
+  },
+  "node.js": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Node.js: mediu de rulare JavaScript pentru programatori.",
+    "en": "Node.js: JavaScript runtime for developers."
+   },
+   "off": {
+    "ro": "Uneltele de programare care îl folosesc nu mai merg.",
+    "en": "Developer tools that use it stop working."
+   }
+  },
+  "python": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Python: limbaj de programare și interpretor.",
+    "en": "Python: programming language and interpreter."
+   },
+   "off": {
+    "ro": "Scripturile și uneltele Python nu mai merg.",
+    "en": "Python scripts and tools stop working."
+   }
+  },
+  "postgresql": {
+   "verdict": "optional",
+   "what": {
+    "ro": "PostgreSQL: server de baze de date.",
+    "en": "PostgreSQL: database server."
+   },
+   "off": {
+    "ro": "Programele care își țin datele în el nu mai merg; datele rămân pe disc.",
+    "en": "Programs storing data in it stop working; the data stays on disk."
+   }
+  },
+  "malwarebytes": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Malwarebytes: scaner anti-malware (varianta gratuită scanează doar la cerere).",
+    "en": "Malwarebytes: anti-malware scanner (the free edition scans on demand only)."
+   },
+   "off": {
+    "ro": "Pierzi un al doilea scaner util; Defender rămâne protecția principală.",
+    "en": "You lose a useful second-opinion scanner; Defender remains the main protection."
+   }
+  },
+  "driverbooster": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "IObit Driver Booster: actualizează drivere din surse proprii și afișează reclame.",
+    "en": "IObit Driver Booster: updates drivers from its own sources and shows ads."
+   },
+   "off": {
+    "ro": "Driverele vin oricum prin Windows Update sau de la producător; e mai sigur fără.",
+    "en": "Drivers come through Windows Update or the manufacturer anyway; safer without it."
+   }
+  },
+  "iobituninstaller": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "IObit Uninstaller: dezinstalator cu reclame; PioCare face același lucru.",
+    "en": "IObit Uninstaller: ad-supported uninstaller; PioCare does the same."
+   },
+   "off": {
+    "ro": "Nimic: PioCare are dezinstalator cu curățare de resturi.",
+    "en": "Nothing: PioCare has an uninstaller with leftover cleanup."
+   }
+  },
+  "iobitsoftwareupdater": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "IObit Software Updater: actualizator de programe cu reclame.",
+    "en": "IObit Software Updater: ad-supported program updater."
+   },
+   "off": {
+    "ro": "Programele se actualizează singure sau din site-urile lor.",
+    "en": "Programs update themselves or from their own sites."
+   }
+  },
+  "advancedsystemcare": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "IObit Advanced SystemCare: „optimizator” marcat de antivirusuri ca program nedorit (PUP).",
+    "en": "IObit Advanced SystemCare: “optimizer” flagged by antivirus tools as a potentially unwanted program (PUP)."
+   },
+   "off": {
+    "ro": "Nimic; PioCare face întreținerea transparent și cu anulare.",
+    "en": "Nothing; PioCare does maintenance transparently and with undo."
+   }
+  },
+  "itop": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Programe iTop: utilitare cu reclame și „oferte” programate.",
+    "en": "iTop programs: utilities with ads and scheduled “offers”."
+   },
+   "off": {
+    "ro": "Nimic, dacă nu folosești explicit acel program.",
+    "en": "Nothing, unless you explicitly use that program."
+   }
+  },
+  "defenderui": {
+   "verdict": "optional",
+   "what": {
+    "ro": "DefenderUI: interfață pentru setările avansate ale Microsoft Defender.",
+    "en": "DefenderUI: interface for Microsoft Defender's advanced settings."
+   },
+   "off": {
+    "ro": "Setările făcute rămân; pierzi doar interfața.",
+    "en": "Settings you made remain; you only lose the interface."
+   }
+  },
+  "poweriso": {
+   "verdict": "optional",
+   "what": {
+    "ro": "PowerISO: creare și montare imagini ISO.",
+    "en": "PowerISO: create and mount ISO images."
+   },
+   "off": {
+    "ro": "Windows montează ISO-uri și singur (dublu clic).",
+    "en": "Windows can mount ISOs by itself (double-click)."
+   }
+  },
+  "winrar": {
+   "verdict": "optional",
+   "what": {
+    "ro": "WinRAR: arhivator (versiune de probă nelimitată).",
+    "en": "WinRAR: archiver (unlimited trial)."
+   },
+   "off": {
+    "ro": "7-Zip face același lucru gratuit.",
+    "en": "7-Zip does the same for free."
+   }
+  },
+  "sharex": {
+   "verdict": "optional",
+   "what": {
+    "ro": "ShareX: capturi de ecran și înregistrări video.",
+    "en": "ShareX: screenshots and screen recordings."
+   },
+   "off": {
+    "ro": "Rămâne unealta de capturi din Windows.",
+    "en": "Windows' own Snipping Tool remains."
+   }
+  },
+  "winamp": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "Winamp: player audio vechi.",
+    "en": "Winamp: old audio player."
+   },
+   "off": {
+    "ro": "VLC sau aplicația Media din Windows îl înlocuiesc.",
+    "en": "VLC or Windows' Media app replace it."
+   }
+  },
+  "epson": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Programe Epson: drivere și utilitare pentru imprimantă și scaner.",
+    "en": "Epson software: printer and scanner drivers and utilities."
+   },
+   "off": {
+    "ro": "Driverul imprimantei trebuie păstrat; utilitarele auxiliare (descărcări, verificare conexiune) nu sunt necesare.",
+    "en": "Keep the printer driver; helper utilities (downloads, connection checks) are not needed."
+   }
+  },
+  "nvidiageforceexperience": {
+   "verdict": "optional",
+   "what": {
+    "ro": "NVIDIA GeForce Experience: actualizări de driver și setări pentru jocuri.",
+    "en": "NVIDIA GeForce Experience: driver updates and game settings."
+   },
+   "off": {
+    "ro": "Driverul video rămâne; pierzi doar actualizările automate și înregistrarea jocurilor.",
+    "en": "The video driver stays; you only lose automatic updates and game recording."
+   }
+  },
+  "nvidiagraphicsdriver": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Driverul plăcii video NVIDIA.",
+    "en": "NVIDIA graphics card driver."
+   },
+   "off": {
+    "ro": "Nu-l dezinstala: imaginea, rezoluția și accelerarea video depind de el.",
+    "en": "Do not uninstall: display, resolution and video acceleration depend on it."
+   }
+  },
+  "nvidiaphysx": {
+   "verdict": "keep",
+   "what": {
+    "ro": "NVIDIA PhysX: componentă de fizică pentru jocuri.",
+    "en": "NVIDIA PhysX: physics component for games."
+   },
+   "off": {
+    "ro": "Unele jocuri nu mai pornesc.",
+    "en": "Some games stop launching."
+   }
+  },
+  "realtek": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Driver și panou Realtek (de obicei placa de sunet).",
+    "en": "Realtek driver and panel (usually the sound card)."
+   },
+   "off": {
+    "ro": "Poți rămâne fără sunet sau fără mufele din față.",
+    "en": "You may lose sound or the front audio jacks."
+   }
+  },
+  "inteldriver&supportassistant": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Intel Driver & Support Assistant: verifică drivere Intel.",
+    "en": "Intel Driver & Support Assistant: checks Intel drivers."
+   },
+   "off": {
+    "ro": "Driverele rămân; pierzi doar verificarea automată.",
+    "en": "Drivers stay; you only lose automatic checks."
+   }
+  },
+  "samsungportablessd": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Software pentru SSD-ul extern Samsung (parolă, actualizări).",
+    "en": "Software for the Samsung portable SSD (password, updates)."
+   },
+   "off": {
+    "ro": "Necesar doar dacă SSD-ul are parolă.",
+    "en": "Only needed if the SSD is password-protected."
+   }
+  },
+  "cloudflared": {
+   "verdict": "optional",
+   "what": {
+    "ro": "cloudflared: tunel Cloudflare (pentru site-uri și servicii de rețea).",
+    "en": "cloudflared: Cloudflare tunnel (for websites and network services)."
+   },
+   "off": {
+    "ro": "Tunelurile Cloudflare configurate nu mai funcționează.",
+    "en": "Configured Cloudflare tunnels stop working."
+   }
+  },
+  "dokan": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Dokan: bibliotecă pentru discuri virtuale, folosită de alte programe.",
+    "en": "Dokan: library for virtual drives, used by other programs."
+   },
+   "off": {
+    "ro": "Programele care montează discuri virtuale prin ea nu mai merg.",
+    "en": "Programs mounting virtual drives through it stop working."
+   }
+  },
+  "microsoftvisualc++": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Microsoft Visual C++ Redistributable: biblioteci de care au nevoie multe programe.",
+    "en": "Microsoft Visual C++ Redistributable: libraries many programs need."
+   },
+   "off": {
+    "ro": "Programe și jocuri pot înceta să pornească. Nu le dezinstala.",
+    "en": "Programs and games may stop launching. Do not uninstall."
+   }
+  },
+  "microsoftwindowsdesktopruntime": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Microsoft .NET Desktop Runtime: mediu de rulare pentru programe .NET.",
+    "en": "Microsoft .NET Desktop Runtime: runtime for .NET programs."
+   },
+   "off": {
+    "ro": "Programele scrise în .NET nu mai pornesc.",
+    "en": "Programs written in .NET stop launching."
+   }
+  },
+  "microsoft.net": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Microsoft .NET: mediu de rulare pentru programe.",
+    "en": "Microsoft .NET: runtime for programs."
+   },
+   "off": {
+    "ro": "Programele care îl folosesc nu mai pornesc.",
+    "en": "Programs using it stop launching."
+   }
+  },
+  "microsoftedgewebview2": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Microsoft Edge WebView2: motorul de afișare folosit de multe aplicații (inclusiv PioCare).",
+    "en": "Microsoft Edge WebView2: display engine used by many apps (including PioCare)."
+   },
+   "off": {
+    "ro": "Multe aplicații moderne nu mai pornesc.",
+    "en": "Many modern apps stop launching."
+   }
+  },
+  "microsoftoffice": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Microsoft Office.",
+    "en": "Microsoft Office."
+   },
+   "off": {
+    "ro": "Nu mai poți edita documente Office.",
+    "en": "You can no longer edit Office documents."
+   }
+  },
+  "oraclevirtualbox": {
+   "verdict": "optional",
+   "what": {
+    "ro": "VirtualBox: mașini virtuale.",
+    "en": "VirtualBox: virtual machines."
+   },
+   "off": {
+    "ro": "Mașinile virtuale VirtualBox nu mai pornesc.",
+    "en": "VirtualBox virtual machines stop working."
+   }
+  },
+  "teamviewer": {
+   "verdict": "optional",
+   "what": {
+    "ro": "TeamViewer: control de la distanță.",
+    "en": "TeamViewer: remote control."
+   },
+   "off": {
+    "ro": "Nimeni nu se mai poate conecta la PC prin el (mai sigur dacă nu-l folosești).",
+    "en": "Nobody can connect through it any more (safer if unused)."
+   }
+  },
+  "anydesk": {
+   "verdict": "optional",
+   "what": {
+    "ro": "AnyDesk: control de la distanță.",
+    "en": "AnyDesk: remote control."
+   },
+   "off": {
+    "ro": "Nimeni nu se mai poate conecta la PC prin el (mai sigur dacă nu-l folosești).",
+    "en": "Nobody can connect through it any more (safer if unused)."
+   }
+  },
+  "ccleaner": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "CCleaner: curățător cu reclame și oferte.",
+    "en": "CCleaner: cleaner with ads and offers."
+   },
+   "off": {
+    "ro": "Nimic; PioCare face curățenia transparent și cu anulare.",
+    "en": "Nothing; PioCare cleans transparently and with undo."
+   }
+  },
+  "utorrent": {
+   "verdict": "safe_off",
+   "what": {
+    "ro": "uTorrent: client torrent cu reclame, des marcat ca program nedorit.",
+    "en": "uTorrent: ad-supported torrent client, often flagged as unwanted."
+   },
+   "off": {
+    "ro": "qBittorrent e o alternativă fără reclame.",
+    "en": "qBittorrent is an ad-free alternative."
+   }
+  },
+  "qbittorrent": {
+   "verdict": "optional",
+   "what": {
+    "ro": "qBittorrent: client torrent fără reclame.",
+    "en": "qBittorrent: ad-free torrent client."
+   },
+   "off": {
+    "ro": "Doar dacă nu mai descarci torrente.",
+    "en": "Only if you no longer download torrents."
+   }
+  },
+  "spotify": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Spotify: muzică online.",
+    "en": "Spotify: online music."
+   },
+   "off": {
+    "ro": "Rămâne varianta web.",
+    "en": "The web version remains."
+   }
+  },
+  "zoom": {
+   "verdict": "optional",
+   "what": {
+    "ro": "Zoom: video-conferințe.",
+    "en": "Zoom: video conferencing."
+   },
+   "off": {
+    "ro": "Te poți alătura întâlnirilor și din browser.",
+    "en": "You can join meetings from the browser too."
+   }
+  },
+  "azor": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Azor (Piogrup).",
+    "en": "Azor (Piogrup)."
+   },
+   "off": {
+    "ro": "Program Piogrup: păstrează-l dacă îl folosești.",
+    "en": "Piogrup program: keep it if you use it."
+   }
+  },
+  "baukurier": {
+   "verdict": "keep",
+   "what": {
+    "ro": "Baukurier (Piogrup): primește fișiere și SMS-uri de pe telefon.",
+    "en": "Baukurier (Piogrup): receives files and SMS from your phone."
+   },
+   "off": {
+    "ro": "Nu mai primești fișiere de pe telefon.",
+    "en": "You no longer receive files from your phone."
+   }
+  },
+  "piocut": {
+   "verdict": "keep",
+   "what": {
+    "ro": "PioCut (Piogrup): planificare debitare plăci.",
+    "en": "PioCut (Piogrup): sheet cutting planner."
+   },
+   "off": {
+    "ro": "Program Piogrup: păstrează-l dacă îl folosești.",
+    "en": "Piogrup program: keep it if you use it."
+   }
+  },
+  "piotile": {
+   "verdict": "keep",
+   "what": {
+    "ro": "PioTile (Piogrup): proiectare placări cu faianță și gresie.",
+    "en": "PioTile (Piogrup): tiling design."
+   },
+   "off": {
+    "ro": "Program Piogrup: păstrează-l dacă îl folosești.",
+    "en": "Piogrup program: keep it if you use it."
+   }
+  },
+  "pionest": {
+   "verdict": "keep",
+   "what": {
+    "ro": "PioNest (Piogrup).",
+    "en": "PioNest (Piogrup)."
+   },
+   "off": {
+    "ro": "Program Piogrup: păstrează-l dacă îl folosești.",
+    "en": "Piogrup program: keep it if you use it."
+   }
+  },
+  "nissrv": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Microsoft Defender Network Inspection: verifică traficul de rețea pentru atacuri cunoscute. Calea e „ascunsă” pentru că rulează ca serviciu protejat.",
+    "en": "Microsoft Defender Network Inspection: checks network traffic for known attacks. Its path is “hidden” because it runs as a protected service."
+   },
+   "off": {
+    "ro": "Nu se blochează: face parte din protecția Windows.",
+    "en": "Do not block: it is part of Windows protection."
+   }
+  },
+  "msedgewebview2": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Motorul de afișare al aplicațiilor moderne (inclusiv PioCare).",
+    "en": "Display engine of modern apps (including PioCare)."
+   },
+   "off": {
+    "ro": "Multe aplicații nu mai afișează nimic.",
+    "en": "Many apps stop displaying anything."
+   }
+  },
+  "backgroundtaskhost": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Gazda sarcinilor de fundal ale aplicațiilor Windows.",
+    "en": "Host for Windows apps' background tasks."
+   },
+   "off": {
+    "ro": "Notificările și sincronizarea aplicațiilor nu mai merg.",
+    "en": "App notifications and sync stop working."
+   }
+  },
+  "runtimebroker": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Gestionează permisiunile aplicațiilor din Microsoft Store.",
+    "en": "Manages permissions of Microsoft Store apps."
+   },
+   "off": {
+    "ro": "Aplicațiile Store nu mai funcționează corect.",
+    "en": "Store apps stop working properly."
+   }
+  },
+  "wmiprvse": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Furnizorul WMI: programele citesc prin el informații despre sistem.",
+    "en": "WMI provider: programs read system information through it."
+   },
+   "off": {
+    "ro": "Multe programe nu mai funcționează.",
+    "en": "Many programs stop working."
+   }
+  },
+  "mpdefendercoreservice": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Serviciul de bază Microsoft Defender.",
+    "en": "Microsoft Defender core service."
+   },
+   "off": {
+    "ro": "Nu se blochează.",
+    "en": "Do not block."
+   }
+  },
+  "taskhostw": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Gazda sarcinilor Windows.",
+    "en": "Windows task host."
+   },
+   "off": {
+    "ro": "Nu se atinge.",
+    "en": "Never touch it."
+   }
+  },
+  "dwm": {
+   "verdict": "vital",
+   "what": {
+    "ro": "Desktop Window Manager: desenează ferestrele și efectele.",
+    "en": "Desktop Window Manager: draws windows and effects."
+   },
+   "off": {
+    "ro": "Ecranul nu mai afișează ferestrele.",
+    "en": "The screen stops showing windows."
+   }
+  }
+ },
+ "ip_owners": [
+  {
+   "cidr": "204.79.197.0/24",
+   "owner": "Microsoft (Bing / servicii Windows)"
+  },
+  {
+   "cidr": "13.64.0.0/11",
+   "owner": "Microsoft (Azure)"
+  },
+  {
+   "cidr": "20.0.0.0/8",
+   "owner": "Microsoft (Azure / servicii Windows)"
+  },
+  {
+   "cidr": "40.64.0.0/10",
+   "owner": "Microsoft (Azure)"
+  },
+  {
+   "cidr": "52.96.0.0/12",
+   "owner": "Microsoft (Office 365 / Outlook)"
+  },
+  {
+   "cidr": "52.112.0.0/14",
+   "owner": "Microsoft (Teams / Office 365)"
+  },
+  {
+   "cidr": "104.40.0.0/13",
+   "owner": "Microsoft (Azure)"
+  },
+  {
+   "cidr": "13.104.0.0/14",
+   "owner": "Microsoft"
+  },
+  {
+   "cidr": "23.0.0.0/12",
+   "owner": "Akamai (rețea de livrare conținut: actualizări, site-uri mari)"
+  },
+  {
+   "cidr": "2.16.0.0/13",
+   "owner": "Akamai (rețea de livrare conținut)"
+  },
+  {
+   "cidr": "104.64.0.0/10",
+   "owner": "Akamai (rețea de livrare conținut)"
+  },
+  {
+   "cidr": "142.250.0.0/15",
+   "owner": "Google"
+  },
+  {
+   "cidr": "172.217.0.0/16",
+   "owner": "Google"
+  },
+  {
+   "cidr": "216.58.192.0/19",
+   "owner": "Google"
+  },
+  {
+   "cidr": "74.125.0.0/16",
+   "owner": "Google"
+  },
+  {
+   "cidr": "8.8.8.0/24",
+   "owner": "Google (DNS public)"
+  },
+  {
+   "cidr": "34.0.0.0/9",
+   "owner": "Google Cloud"
+  },
+  {
+   "cidr": "35.184.0.0/13",
+   "owner": "Google Cloud"
+  },
+  {
+   "cidr": "104.16.0.0/13",
+   "owner": "Cloudflare"
+  },
+  {
+   "cidr": "104.24.0.0/14",
+   "owner": "Cloudflare"
+  },
+  {
+   "cidr": "172.64.0.0/13",
+   "owner": "Cloudflare"
+  },
+  {
+   "cidr": "162.158.0.0/15",
+   "owner": "Cloudflare"
+  },
+  {
+   "cidr": "1.1.1.0/24",
+   "owner": "Cloudflare (DNS public)"
+  },
+  {
+   "cidr": "3.0.0.0/9",
+   "owner": "Amazon Web Services"
+  },
+  {
+   "cidr": "54.0.0.0/8",
+   "owner": "Amazon Web Services"
+  },
+  {
+   "cidr": "52.0.0.0/11",
+   "owner": "Amazon Web Services"
+  },
+  {
+   "cidr": "18.128.0.0/9",
+   "owner": "Amazon Web Services"
+  },
+  {
+   "cidr": "151.101.0.0/16",
+   "owner": "Fastly (rețea de livrare conținut)"
+  },
+  {
+   "cidr": "157.240.0.0/16",
+   "owner": "Meta (Facebook, Instagram, WhatsApp)"
+  },
+  {
+   "cidr": "31.13.64.0/18",
+   "owner": "Meta (Facebook, Instagram, WhatsApp)"
+  },
+  {
+   "cidr": "140.82.112.0/20",
+   "owner": "GitHub"
+  },
+  {
+   "cidr": "185.199.108.0/22",
+   "owner": "GitHub"
+  },
+  {
+   "cidr": "162.159.128.0/17",
+   "owner": "Cloudflare (folosit și de Discord)"
+  },
+  {
+   "cidr": "185.26.182.0/23",
+   "owner": "Opera"
+  },
+  {
+   "cidr": "82.145.208.0/20",
+   "owner": "Opera"
+  }
+ ]
 }

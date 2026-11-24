@@ -56,6 +56,10 @@ pub enum ActionSpec {
     Quarantine { path: String },
     /// Sarcină programată (în afara celor Microsoft): pornită / oprită.
     ScheduledTask { path: String, name: String, enabled: bool },
+    /// Ștergerea unei sarcini programate (cu copie XML, readusă la anulare).
+    DeleteTask { path: String, name: String },
+    /// Limita de spațiu pentru punctele de restaurare pe C: (None = nelimitat).
+    RestoreLimit { max_bytes: Option<u64> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -65,6 +69,8 @@ pub enum Before {
     /// Unde a fost mutat în carantină.
     Quarantined { stored: String },
     Task { enabled: bool },
+    TaskXml { file: String },
+    Limit { max_bytes: Option<u64> },
     FwRule { existed: bool },
     FwProfile { enabled: bool, inbound: String },
     /// Starea unei valori: dacă exista cheia și ce valoare era (None = nu exista).
@@ -84,7 +90,9 @@ impl ActionSpec {
             | ActionSpec::SystemProtection { .. }
             | ActionSpec::FirewallBlock(_)
             | ActionSpec::FirewallProfileOn { .. }
-            | ActionSpec::ScheduledTask { .. } => true,
+            | ActionSpec::ScheduledTask { .. }
+            | ActionSpec::DeleteTask { .. }
+            | ActionSpec::RestoreLimit { .. } => true,
             ActionSpec::Quarantine { path } => crate::uninstall::quarantine_needs_admin(path),
         }
     }
@@ -102,6 +110,16 @@ impl ActionSpec {
             ActionSpec::FirewallBlock(r) => crate::i18n::t(&format!("Firewall: blochează {}", r.display), &format!("Firewall: block {}", r.display)),
             ActionSpec::FirewallProfileOn { profile } => crate::i18n::t(&format!("Firewall: profilul {profile} pornit, intrări blocate"), &format!("Firewall: {profile} profile on, inbound blocked")),
             ActionSpec::Quarantine { path } => crate::i18n::t(&format!("Mută în carantină: {path}"), &format!("Move to quarantine: {path}")),
+            ActionSpec::RestoreLimit { max_bytes } => match max_bytes {
+                Some(b) => crate::i18n::t(
+                    &format!("Puncte de restaurare pe C:: limită {:.1} GB", *b as f64 / 1_073_741_824.0),
+                    &format!("Restore points on C:: limit {:.1} GB", *b as f64 / 1_073_741_824.0),
+                ),
+                None => crate::i18n::t("Puncte de restaurare pe C:: fără limită", "Restore points on C:: no limit"),
+            },
+            ActionSpec::DeleteTask { path, name } => {
+                crate::i18n::t(&format!("Șterge sarcina programată {path}{name} (cu copie)"), &format!("Delete scheduled task {path}{name} (with backup)"))
+            }
             ActionSpec::ScheduledTask { path, name, enabled } => {
                 if *enabled {
                     crate::i18n::t(&format!("Sarcină programată {path}{name}: pornită"), &format!("Scheduled task {path}{name}: enabled"))
@@ -327,6 +345,18 @@ mod win {
                 Ok(Before::Quarantined { stored: stored.to_string_lossy().into_owned() })
             }
             ActionSpec::ScheduledTask { path, name, .. } => Ok(Before::Task { enabled: crate::startup::task_enabled(path, name)? }),
+            ActionSpec::RestoreLimit { .. } => {
+                let info = crate::sys::restore_info();
+                if let Some(e) = info.error {
+                    return Err(e);
+                }
+                Ok(Before::Limit { max_bytes: info.max_bytes })
+            }
+            ActionSpec::DeleteTask { path, name } => {
+                let file = format!("step{idx:02}-task.xml");
+                crate::tasks::export(path, name, &op_dir.join(&file))?;
+                Ok(Before::TaskXml { file })
+            }
         }
     }
 
@@ -355,6 +385,8 @@ mod win {
             ActionSpec::FirewallBlock(r) => crate::firewall::add_rule(r),
             ActionSpec::FirewallProfileOn { profile } => crate::firewall::set_profile(profile, true, "Block"),
             ActionSpec::ScheduledTask { path, name, enabled } => crate::startup::set_task(path, name, *enabled),
+            ActionSpec::DeleteTask { path, name } => crate::tasks::delete(path, name),
+            ActionSpec::RestoreLimit { max_bytes } => crate::sys::set_restore_limit(*max_bytes),
         }
     }
 
@@ -392,6 +424,13 @@ mod win {
                 crate::firewall::set_profile(profile, *enabled, inbound)
             }
             (ActionSpec::ScheduledTask { path, name, .. }, Before::Task { enabled }) => crate::startup::set_task(path, name, *enabled),
+            (ActionSpec::RestoreLimit { .. }, Before::Limit { max_bytes }) => crate::sys::set_restore_limit(*max_bytes),
+            (ActionSpec::DeleteTask { path, name }, Before::TaskXml { file }) => {
+                if crate::startup::task_enabled(path, name).is_ok() {
+                    return Ok(()); // există deja (ex. nu a apucat să fie ștearsă)
+                }
+                crate::tasks::restore(path, name, &op_dir.join(file))
+            }
             (ActionSpec::Quarantine { path }, Before::Quarantined { stored }) => {
                 if std::fs::symlink_metadata(path).is_ok() {
                     return Err(crate::i18n::t(&format!("există deja ceva la {path}; nu suprascriu"), &format!("something already exists at {path}; not overwriting")));

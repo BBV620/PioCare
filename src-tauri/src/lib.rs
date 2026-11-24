@@ -9,11 +9,13 @@ mod firewall;
 mod i18n;
 mod journal;
 mod maintenance;
+mod monitor;
 mod rules;
 mod services;
 mod sys;
 mod startup;
 mod system;
+mod tasks;
 mod uninstall;
 
 use actions::ActionSpec;
@@ -169,6 +171,120 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
         title: format!("Firewall: {}", rule.display),
         rule_id: Some("firewall.block.program".into()),
         actions: vec![ActionSpec::FirewallBlock(rule)],
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
+/// Punctele de restaurare și spațiul lor (cere administrator: o fereastră UAC, doar citire).
+#[tauri::command(async)]
+fn restore_points() -> Result<sys::RestoreInfo, String> {
+    if sys::is_elevated() {
+        return Ok(sys::restore_info());
+    }
+    let root = journal::default_root()?;
+    let dir = root.join(".requests");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let res = dir.join(format!("rp-{}.json", journal::now()));
+    sys::run_self_elevated(&["--restore-info".into(), res.to_string_lossy().into_owned()])?;
+    let text = std::fs::read_to_string(&res).map_err(|_| i18n::t("pasul de administrator nu a întors un rezultat", "the administrator step returned no result"))?;
+    let _ = std::fs::remove_file(&res);
+    serde_json::from_str(&text).map_err(|e| e.to_string())
+}
+
+/// Schimbă limita de spațiu pentru punctele de restaurare (prin motor, cu anulare). `gb` = 0 → nelimitat.
+#[tauri::command(async)]
+fn restore_limit(gb: u64) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    if gb > 0 && !(2..=100).contains(&gb) {
+        return Err(i18n::t("limită nepermisă", "limit not allowed"));
+    }
+    let plan = Plan {
+        title: i18n::t("Limita punctelor de restaurare", "Restore point limit"),
+        rule_id: Some("restore.limit".into()),
+        actions: vec![ActionSpec::RestoreLimit { max_bytes: if gb == 0 { None } else { Some(gb * 1_073_741_824) } }],
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
+/// PioCare.exe --restore-info <rezultat>: citire ridicată a punctelor de restaurare.
+pub fn elevated_restore_info(res: &str) -> i32 {
+    let info = sys::restore_info();
+    let ok = info.error.is_none();
+    let _ = std::fs::write(res, serde_json::to_string(&info).unwrap_or_default());
+    if ok { 0 } else { 2 }
+}
+
+/// Monitor: o măsurătoare (procesor, RAM, procese, placa video).
+#[tauri::command(async)]
+fn monitor_sample(by: String) -> monitor::Sample {
+    monitor::sample(&by, 30)
+}
+
+/// Monitor: închide un proces al utilizatorului (confirmat în interfață).
+#[tauri::command(async)]
+fn monitor_kill(pid: u32, name: String) -> Result<(), String> {
+    monitor::kill(pid, &name)
+}
+
+/// Detalii despre o adresă IP (local: proprietar cunoscut + nume DNS invers).
+#[tauri::command(async)]
+fn ip_info(ip: String) -> Result<explain::IpInfo, String> {
+    explain::ip_info(&ip)
+}
+
+/// Deschide în browser o pagină publică de detalii pentru o adresă IP (doar la clic).
+#[tauri::command]
+fn ip_web(ip: String) -> Result<(), String> {
+    let ip: std::net::IpAddr = ip.parse().map_err(|_| i18n::t("adresă IP invalidă", "invalid IP address"))?;
+    sys::open_url(&format!("https://ipinfo.io/{ip}"))
+}
+
+/// „Caută pe internet” din fereastra „Ce este?”.
+#[tauri::command]
+fn search_web(query: String) -> Result<(), String> {
+    sys::open_search(&query)
+}
+
+/// Sarcini programate (doar citire).
+#[tauri::command(async)]
+fn tasks_list() -> Vec<tasks::TaskItem> {
+    tasks::list()
+}
+
+/// Sarcini: activare/dezactivare sau ștergere (cu copie XML), prin motor, cu anulare.
+/// `mode` = "disable" / "enable" / "delete". Sarcinile Microsoft nu se ating; cele create de tine nu se șterg.
+#[tauri::command(async)]
+fn tasks_apply(ids: Vec<String>, mode: String) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let chosen: Vec<_> = tasks::list()
+        .into_iter()
+        .filter(|t| ids.contains(&t.id) && !t.microsoft)
+        .filter(|t| match mode.as_str() {
+            "disable" => t.enabled,
+            "enable" => !t.enabled,
+            "delete" => t.can_delete,
+            _ => false,
+        })
+        .collect();
+    if chosen.is_empty() {
+        return Err(i18n::t("nimic de schimbat", "nothing to change"));
+    }
+    let names = chosen.iter().map(|t| t.name.clone()).collect::<Vec<_>>().join(", ");
+    let (ro, en) = match mode.as_str() {
+        "delete" => ("Sarcini șterse", "Tasks deleted"),
+        "enable" => ("Sarcini activate", "Tasks enabled"),
+        _ => ("Sarcini dezactivate", "Tasks disabled"),
+    };
+    let plan = Plan {
+        title: i18n::t(&format!("{ro}: {names}"), &format!("{en}: {names}")),
+        rule_id: Some(format!("tasks.{mode}")),
+        actions: chosen
+            .into_iter()
+            .map(|t| match mode.as_str() {
+                "delete" => ActionSpec::DeleteTask { path: t.path, name: t.name },
+                m => ActionSpec::ScheduledTask { path: t.path, name: t.name, enabled: m == "enable" },
+            })
+            .collect(),
     };
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
@@ -360,6 +476,15 @@ pub fn run() {
             services_apply,
             explain,
             open_rules_folder,
+            search_web,
+            ip_info,
+            ip_web,
+            restore_points,
+            restore_limit,
+            monitor_sample,
+            monitor_kill,
+            tasks_list,
+            tasks_apply,
             startup_list,
             startup_set,
             programs_list,
