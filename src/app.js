@@ -120,6 +120,7 @@ function show(page) {
   if (page === "jurnal") loadJournal();
   if (page === "servicii") loadServicesPage();
   if (page === "firewall") loadFirewallPage();
+  if (page === "programe") loadPrograms();
 }
 document.querySelectorAll("nav a").forEach((a) =>
   a.addEventListener("click", (e) => {
@@ -586,6 +587,137 @@ $("btn-mt-clean").addEventListener("click", async () => {
     mtStatus(String(e), "bad");
     $("btn-mt-scan").disabled = false;
     updateMtClean();
+  }
+});
+
+// ---------- dezinstalare ----------
+let programs = [];
+let current = null; // programul în lucru (informațiile lui rămân după ce dispare din registru)
+const unStatus = statusBox("un-status");
+const fmtDate = (d) => (/^\d{8}$/.test(d) ? `${d.slice(6, 8)}.${d.slice(4, 6)}.${d.slice(0, 4)}` : "");
+const KIND = (k) => t(`un.kind.${k}`);
+
+function renderPrograms() {
+  const q = $("un-filter").value.trim().toLowerCase();
+  const rows = programs.filter((p) => !q || p.name.toLowerCase().includes(q) || p.publisher.toLowerCase().includes(q));
+  $("un-list").innerHTML = `<p class="sub">${esc(t("un.count", { n: programs.length }))}</p><div class="map">${rows
+    .map(
+      (p) => `<div class="svc">
+        <div><b>${esc(p.name)}</b>${p.shared ? ` <span class="badge warn">${esc(t("un.shared"))}</span>` : ""}${infoBtn("program", p.name, "")}</div>
+        <div class="sub">${esc([p.publisher, p.version].filter(Boolean).join(" · "))}</div>
+        <div class="sub">${esc([p.size_kb ? mb(p.size_kb * 1024) : "", fmtDate(p.install_date), p.machine ? t("un.allUsers") : t("un.thisUser")].filter(Boolean).join(" · "))}</div>
+        <div class="op-actions"><button class="ghost" data-un="${esc(p.id)}">${esc(t("un.uninstall"))}</button></div>
+      </div>`
+    )
+    .join("")}</div>`;
+}
+
+async function loadPrograms() {
+  try {
+    programs = await invoke("programs_list");
+    renderPrograms();
+  } catch (e) {
+    $("un-list").textContent = String(e);
+  }
+}
+
+async function scanLeftovers() {
+  unStatus(t("un.scanning"), "warn");
+  const r = await invoke("program_leftovers", { program: current });
+  if (r.still_installed) {
+    unStatus(t("un.stillInstalled"), "warn");
+    $("un-badge").textContent = t("un.notRemoved");
+    $("un-badge").className = "badge warn";
+    return;
+  }
+  $("un-badge").textContent = t("un.removed");
+  $("un-badge").className = "badge ok";
+  if (!r.leftovers.length) {
+    unStatus(t("un.noLeftovers"), "ok");
+    await showAfter(null);
+    return;
+  }
+  const total = r.leftovers.reduce((a, l) => a + l.size_bytes, 0);
+  unStatus(t("un.found", { n: r.leftovers.length, size: mb(total) }), "warn");
+  $("un-left").innerHTML = `<p class="sub legend">${esc(t("un.legend"))}</p><ul class="finds">${r.leftovers
+    .map(
+      (l) => `<li><label><input type="checkbox" checked data-left="${esc(l.id)}">
+        <span><b>${esc(KIND(l.kind))}</b>${l.needs_admin ? ` <span class="tag">${esc(t("common.admin"))}</span>` : ""}${l.size_bytes ? ` <span class="sub">${esc(mb(l.size_bytes))}</span>` : ""}
+        <div class="sub">${esc(l.location)}</div></span></label></li>`
+    )
+    .join("")}</ul>`;
+  $("btn-un-clean").classList.remove("hidden");
+}
+
+async function showAfter(op) {
+  const before = programs.length;
+  const now = await invoke("programs_list");
+  let dead = "?";
+  try {
+    dead = (await invoke("registry_scan")).findings.length;
+  } catch {}
+  const lines = [
+    t("un.after.programs", { a: before, b: now.length }),
+    op ? t("un.after.cleaned", { n: op.step_texts.filter((s) => s.state === "applied").length }) : "",
+    t("un.after.registry", { n: dead }),
+    op ? t("common.undoHint") : "",
+  ].filter(Boolean);
+  $("un-after").innerHTML = `<div class="exsec"><b>${esc(t("un.after.title"))}</b>${lines.map(esc).join("<br>")}</div>`;
+  programs = now;
+  renderPrograms();
+}
+
+$("un-filter").addEventListener("input", renderPrograms);
+$("btn-un-refresh").addEventListener("click", loadPrograms);
+$("btn-un-close").addEventListener("click", () => {
+  $("un-flow").classList.add("hidden");
+  current = null;
+});
+$("un-list").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-un]");
+  if (!b) return;
+  current = programs.find((p) => p.id === b.dataset.un);
+  if (!current) return;
+  $("un-flow").classList.remove("hidden");
+  $("un-name").textContent = current.name;
+  $("un-sub").textContent = [current.publisher, current.version].filter(Boolean).join(" · ");
+  $("un-badge").textContent = "";
+  $("un-left").innerHTML = "";
+  $("un-after").innerHTML = "";
+  $("btn-un-clean").classList.add("hidden");
+  window.scrollTo(0, 0);
+  if (current.shared) unStatus(t("un.sharedWarn"), "warn");
+  document.querySelectorAll("#un-list button").forEach((x) => (x.disabled = true));
+  unStatus(t("un.running"), "warn");
+  try {
+    await invoke("program_uninstall", { id: current.id });
+    // Unele dezinstalatoare (ex. Inno Setup) se copiază și continuă în alt proces: așteptăm să dispară din registru.
+    unStatus(t("un.waiting"), "warn");
+    for (let i = 0; i < 90 && (await invoke("program_exists", { id: current.id })); i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    await scanLeftovers();
+  } catch (err) {
+    unStatus(String(err), "bad");
+  } finally {
+    document.querySelectorAll("#un-list button").forEach((x) => (x.disabled = false));
+  }
+});
+$("btn-un-clean").addEventListener("click", async () => {
+  const ids = [...document.querySelectorAll("#un-left input:checked")].map((c) => c.dataset.left);
+  if (!ids.length || !current) return;
+  $("btn-un-clean").disabled = true;
+  unStatus(t("un.cleaning"), "warn");
+  try {
+    const op = await invoke("program_clean", { program: current, ids });
+    unStatus(t("j.result", { title: op.title, label: statusLabel(op.status) }), op.status === "applied" ? "ok" : "bad");
+    $("btn-un-clean").classList.add("hidden");
+    $("un-left").innerHTML = "";
+    await showAfter(op);
+  } catch (err) {
+    unStatus(String(err), "bad");
+  } finally {
+    $("btn-un-clean").disabled = false;
   }
 });
 

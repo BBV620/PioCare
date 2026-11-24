@@ -137,6 +137,46 @@ pub fn export_firewall(file: &Path) -> Result<(), String> {
     if file.exists() { Ok(()) } else { Err("netsh nu a produs fișierul".into()) }
 }
 
+/// Rulează un program extern (ex. dezinstalatorul oficial) cu fereastra lui vizibilă și așteaptă să se închidă.
+/// `admin` = cere direct drepturi de administrator (UAC).
+#[cfg(windows)]
+pub fn shell_run_wait(file: &str, params: &str, admin: bool) -> Result<u32, String> {
+    use windows_sys::Win32::Foundation::{CloseHandle, GetLastError};
+    use windows_sys::Win32::System::Threading::{GetExitCodeProcess, WaitForSingleObject, INFINITE};
+    use windows_sys::Win32::UI::Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW};
+    let wide = |s: &str| s.encode_utf16().chain(std::iter::once(0)).collect::<Vec<u16>>();
+    let (verb, f, p) = (wide(if admin { "runas" } else { "open" }), wide(file), wide(params));
+    unsafe {
+        let mut info: SHELLEXECUTEINFOW = std::mem::zeroed();
+        info.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+        info.fMask = SEE_MASK_NOCLOSEPROCESS;
+        info.lpVerb = verb.as_ptr();
+        info.lpFile = f.as_ptr();
+        info.lpParameters = p.as_ptr();
+        info.nShow = 1; // SW_SHOWNORMAL: dezinstalatorul trebuie să se vadă
+        let main = MAIN_HWND.load(std::sync::atomic::Ordering::Relaxed);
+        info.hwnd = main as *mut core::ffi::c_void;
+        if ShellExecuteExW(&mut info) == 0 {
+            return Err(if GetLastError() == 1223 {
+                crate::i18n::t("ai refuzat cererea de administrator; nu s-a schimbat nimic", "you declined the administrator request; nothing was changed")
+            } else {
+                crate::i18n::t(
+                    &format!("nu pot porni dezinstalatorul: {}", std::io::Error::last_os_error()),
+                    &format!("cannot start the uninstaller: {}", std::io::Error::last_os_error()),
+                )
+            });
+        }
+        if info.hProcess.is_null() {
+            return Ok(0);
+        }
+        WaitForSingleObject(info.hProcess, INFINITE);
+        let mut code = 0u32;
+        GetExitCodeProcess(info.hProcess, &mut code);
+        CloseHandle(info.hProcess);
+        Ok(code)
+    }
+}
+
 /// Fereastra principală PioCare, ca fereastra UAC să i se atașeze și să apară în față.
 static MAIN_HWND: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
 

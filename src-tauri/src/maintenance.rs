@@ -206,6 +206,54 @@ fn blocked_reason(item: &Item, procs: &[String]) -> Option<String> {
     }
 }
 
+/// Operațiile din carantina PioCare mai vechi de 7 zile (pe toate discurile).
+fn quarantine_old_dirs() -> Vec<PathBuf> {
+    let mut roots: Vec<PathBuf> = vec![];
+    if let Ok(l) = std::env::var("LOCALAPPDATA") {
+        roots.push(PathBuf::from(l).join("PioCare\\carantina"));
+    }
+    if let Ok(p) = std::env::var("ProgramData") {
+        roots.push(PathBuf::from(p).join("PioCare\\carantina"));
+    }
+    for d in b'D'..=b'Z' {
+        roots.push(PathBuf::from(format!("{}:\\.piocare-carantina", d as char)));
+    }
+    let cutoff = SystemTime::now() - Duration::from_secs(7 * 86_400);
+    roots
+        .iter()
+        .filter_map(|r| std::fs::read_dir(r).ok())
+        .flat_map(|rd| rd.flatten())
+        .filter(|e| !is_reparse(&e.path()) && e.path().is_dir())
+        .filter(|e| e.metadata().and_then(|m| m.modified()).map_or(false, |t| t <= cutoff))
+        .map(|e| e.path())
+        .collect()
+}
+
+fn tree_size(p: &Path) -> (u64, u64) {
+    let (mut f, mut b) = (0u64, 0u64);
+    if let Ok(rd) = std::fs::read_dir(p) {
+        for e in rd.flatten() {
+            let path = e.path();
+            if is_reparse(&path) {
+                continue;
+            }
+            match std::fs::symlink_metadata(&path) {
+                Ok(m) if m.is_dir() => {
+                    let (ff, bb) = tree_size(&path);
+                    f += ff;
+                    b += bb;
+                }
+                Ok(m) => {
+                    f += 1;
+                    b += m.len();
+                }
+                Err(_) => {}
+            }
+        }
+    }
+    (f, b)
+}
+
 #[cfg(windows)]
 fn recycle_bin_size() -> Option<(u64, u64)> {
     use windows_sys::Win32::UI::Shell::{SHQueryRecycleBinW, SHQUERYRBINFO};
@@ -238,6 +286,16 @@ pub fn scan() -> Result<Scan, String> {
                     si.files = Some(n);
                     si.bytes = Some(b);
                 }
+            }
+            Some("quarantine_old") => {
+                let (mut f, mut b) = (0, 0);
+                for d in quarantine_old_dirs() {
+                    let (ff, bb) = tree_size(&d);
+                    f += ff;
+                    b += bb;
+                }
+                si.files = Some(f);
+                si.bytes = Some(b);
             }
             Some(_) => {}
             None => {
@@ -324,6 +382,17 @@ pub fn clean(ids: &[String]) -> Result<Vec<CleanResult>, String> {
                 match crate::sys::run_hidden("Dism.exe", &["/Online", "/Cleanup-Image", "/StartComponentCleanup", "/Quiet"]) {
                     Ok(_) => res.note = Some(crate::i18n::t("făcut (DISM)", "done (DISM)")),
                     Err(e) => res.note = Some(crate::i18n::t(&format!("eroare DISM: {e}"), &format!("DISM error: {e}"))),
+                }
+            }
+            Some("quarantine_old") => {
+                for d in quarantine_old_dirs() {
+                    let (f, b) = tree_size(&d);
+                    if std::fs::remove_dir_all(&d).is_ok() {
+                        res.files += f;
+                        res.bytes += b;
+                    } else {
+                        res.skipped += 1;
+                    }
                 }
             }
             Some(other) => res.note = Some(format!("operație necunoscută: {other}")),

@@ -34,6 +34,7 @@
     <nav>
       <a class="active" href="#panou" data-page="panou" data-i18n="nav.panou"></a>
       <a href="#intretinere" data-page="intretinere" data-i18n="nav.intretinere"></a>
+      <a href="#programe" data-page="programe" data-i18n="nav.programe"></a>
       <a href="#registru" data-page="registru" data-i18n="nav.registru"></a>
       <a href="#servicii" data-page="servicii" data-i18n="nav.servicii"></a>
       <a href="#firewall" data-page="firewall" data-i18n="nav.firewall"></a>
@@ -84,6 +85,28 @@
       <p class="lead" data-i18n="mt.lead"></p>
       <div id="mt-status" class="status hidden"></div>
       <div id="mt-results"><p class="empty" data-i18n="mt.empty"></p></div>
+    </div>
+
+    <div class="page hidden" id="page-programe">
+      <header>
+        <h1 data-i18n="un.title"></h1>
+        <div class="actions"><button class="ghost" id="btn-un-refresh" data-i18n="common.refresh"></button></div>
+      </header>
+      <p class="lead" data-i18n="un.lead"></p>
+      <div id="un-flow" class="hidden">
+        <div class="op">
+          <div class="op-head"><div><b id="un-name"></b><div class="sub" id="un-sub"></div></div><span class="badge" id="un-badge"></span></div>
+          <div id="un-status" class="status hidden" style="margin-top:10px"></div>
+          <div id="un-left"></div>
+          <div class="op-actions">
+            <button id="btn-un-clean" class="hidden" data-i18n="un.clean"></button>
+            <button id="btn-un-close" class="ghost" data-i18n="ex.close"></button>
+          </div>
+          <div id="un-after"></div>
+        </div>
+      </div>
+      <input id="un-filter" class="search" data-i18n-ph="un.filter">
+      <div id="un-list"></div>
     </div>
 
     <div class="page hidden" id="page-registru">

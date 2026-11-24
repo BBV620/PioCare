@@ -195,7 +195,7 @@ fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {
 
     // 3. Aplicare, cu revenire automată la primul eșec.
     for i in 0..op.steps.len() {
-        match actions::apply(&op.steps[i].action) {
+        match actions::apply(&op.steps[i].action, op.steps[i].before.as_ref()) {
             Ok(()) => op.steps[i].state = StepState::Applied,
             Err(e) => {
                 op.steps[i].state = StepState::Failed;

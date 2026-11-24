@@ -13,6 +13,7 @@ mod rules;
 mod services;
 mod sys;
 mod system;
+mod uninstall;
 
 use actions::{ActionSpec, RegData, Root};
 use engine::{Plan, Request};
@@ -205,6 +206,56 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Dezinstalator: lista programelor (doar citire).
+#[tauri::command(async)]
+fn programs_list() -> Vec<uninstall::Program> {
+    uninstall::list()
+}
+
+#[tauri::command]
+fn program_exists(id: String) -> bool {
+    uninstall::exists(&id)
+}
+
+/// Rulează dezinstalatorul oficial și așteaptă să se închidă (întoarce codul de ieșire).
+#[tauri::command(async)]
+fn program_uninstall(id: String) -> Result<u32, String> {
+    uninstall::run(&id)
+}
+
+#[derive(serde::Serialize)]
+struct LeftoverScan {
+    leftovers: Vec<uninstall::Leftover>,
+    still_installed: bool,
+}
+
+/// Resturile unui program (după dezinstalare). Doar citire.
+#[tauri::command(async)]
+fn program_leftovers(program: uninstall::Program) -> LeftoverScan {
+    let all = uninstall::list();
+    LeftoverScan { still_installed: uninstall::exists(&program.id), leftovers: uninstall::leftovers(&program, &all) }
+}
+
+/// Curăță resturile bifate: rescanează și trece doar ce e încă valabil prin motor (copie, carantină, anulare).
+#[tauri::command(async)]
+fn program_clean(program: uninstall::Program, ids: Vec<String>) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let all = uninstall::list();
+    let chosen: Vec<_> = uninstall::leftovers(&program, &all).into_iter().filter(|l| ids.contains(&l.id)).collect();
+    if chosen.is_empty() {
+        return Err(i18n::t("nicio intrare selectată nu mai este valabilă; rescanează", "none of the selected entries is still valid; scan again"));
+    }
+    let plan = Plan {
+        title: i18n::t(
+            &format!("Resturi {}: {} elemente", program.name, chosen.len()),
+            &format!("{} leftovers: {} items", program.name, chosen.len()),
+        ),
+        rule_id: Some("uninstall.leftovers".into()),
+        actions: chosen.into_iter().map(|l| l.action).collect(),
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 /// „Ce este?” pentru un serviciu sau program (doar citire).
 #[tauri::command(async)]
 fn explain(kind: String, name: String, path: Option<String>) -> Result<explain::Explanation, String> {
@@ -308,6 +359,11 @@ pub fn run() {
             services_analyze,
             services_apply,
             explain,
+            programs_list,
+            program_exists,
+            program_uninstall,
+            program_leftovers,
+            program_clean,
             get_language,
             set_language,
             maintenance_scan,

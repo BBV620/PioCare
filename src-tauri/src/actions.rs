@@ -51,12 +51,16 @@ pub enum ActionSpec {
     FirewallBlock(crate::firewall::FwRule),
     /// Profil de firewall (Domain / Private / Public): pornit + intrările nesolicitate blocate.
     FirewallProfileOn { profile: String },
+    /// Folder/fișier rămas de la un program dezinstalat: mutat în carantină (pe același disc), nu șters.
+    Quarantine { path: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Before {
     Protection { enabled: bool },
+    /// Unde a fost mutat în carantină.
+    Quarantined { stored: String },
     FwRule { existed: bool },
     FwProfile { enabled: bool, inbound: String },
     /// Starea unei valori: dacă exista cheia și ce valoare era (None = nu exista).
@@ -76,6 +80,7 @@ impl ActionSpec {
             | ActionSpec::SystemProtection { .. }
             | ActionSpec::FirewallBlock(_)
             | ActionSpec::FirewallProfileOn { .. } => true,
+            ActionSpec::Quarantine { path } => crate::uninstall::quarantine_needs_admin(path),
         }
     }
 
@@ -91,6 +96,7 @@ impl ActionSpec {
             }
             ActionSpec::FirewallBlock(r) => crate::i18n::t(&format!("Firewall: blochează {}", r.display), &format!("Firewall: block {}", r.display)),
             ActionSpec::FirewallProfileOn { profile } => crate::i18n::t(&format!("Firewall: profilul {profile} pornit, intrări blocate"), &format!("Firewall: {profile} profile on, inbound blocked")),
+            ActionSpec::Quarantine { path } => crate::i18n::t(&format!("Mută în carantină: {path}"), &format!("Move to quarantine: {path}")),
         }
     }
 }
@@ -299,11 +305,31 @@ mod win {
                 let p = crate::firewall::read_profile(profile)?;
                 Ok(Before::FwProfile { enabled: p.enabled, inbound: p.inbound })
             }
+            ActionSpec::Quarantine { path } => {
+                crate::uninstall::check_quarantine_path(path)?;
+                if std::fs::symlink_metadata(path).is_err() {
+                    return Err(crate::i18n::t(&format!("nu mai există: {path}"), &format!("no longer exists: {path}")));
+                }
+                let op_id = op_dir.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
+                let stored = crate::uninstall::quarantine_target(path, &op_id, idx);
+                Ok(Before::Quarantined { stored: stored.to_string_lossy().into_owned() })
+            }
         }
     }
 
-    pub fn apply(a: &ActionSpec) -> Result<(), String> {
+    pub fn apply(a: &ActionSpec, before: Option<&Before>) -> Result<(), String> {
         match a {
+            ActionSpec::Quarantine { path } => {
+                let Some(Before::Quarantined { stored }) = before else {
+                    return Err("carantină fără destinație".into());
+                };
+                let dest = Path::new(stored);
+                if let Some(parent) = dest.parent() {
+                    std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+                }
+                // Mutare pe același disc: instantanee, fără copiere. Dacă ceva e în uz, eșuează și motorul revine.
+                std::fs::rename(path, dest).map_err(|e| crate::i18n::t(&format!("nu pot muta {path} (poate e în uz): {e}"), &format!("cannot move {path} (maybe in use): {e}")))
+            }
             ActionSpec::RegSetValue { root, path, name, value } => write_value(*root, path, name, value),
             ActionSpec::RegDeleteValue { root, path, name } => delete_value(*root, path, name),
             ActionSpec::RegDeleteKey { root, path } => match hkey(*root).delete_subkey_all(path) {
@@ -350,6 +376,18 @@ mod win {
             }
             (ActionSpec::FirewallProfileOn { profile }, Before::FwProfile { enabled, inbound }) => {
                 crate::firewall::set_profile(profile, *enabled, inbound)
+            }
+            (ActionSpec::Quarantine { path }, Before::Quarantined { stored }) => {
+                if std::fs::symlink_metadata(path).is_ok() {
+                    return Err(crate::i18n::t(&format!("există deja ceva la {path}; nu suprascriu"), &format!("something already exists at {path}; not overwriting")));
+                }
+                if std::fs::symlink_metadata(stored).is_err() {
+                    return Err(crate::i18n::t(&format!("carantina a fost golită; {path} nu mai poate fi readus"), &format!("the quarantine was emptied; {path} can no longer be restored")));
+                }
+                if let Some(parent) = Path::new(path).parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                std::fs::rename(stored, path).map_err(|e| format!("{path}: {e}"))
             }
             _ => Err("starea salvată nu se potrivește cu acțiunea".into()),
         }
