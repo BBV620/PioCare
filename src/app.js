@@ -117,7 +117,7 @@ async function loadJournal() {
     // Protecția sistemului: starea directă (cu administrator) sau dedusă din ultimul punct de restaurare încercat.
     const st = await invoke("protection_status");
     const last = ops.find((o) => o.restore_point);
-    const lastFailed = last && !last.restore_point.startsWith("punct de restaurare creat");
+    const lastFailed = last && !/^punct de restaurare (creat|recent)/.test(last.restore_point);
     const lastDisabled = lastFailed && /disabled|dezactivat|no enabled devices|dispozitive activate/i.test(last.restore_point);
     $("protect").classList.toggle("hidden", !(st === false || (st === null && lastDisabled)));
     $("ops").innerHTML = ops.length ? ops.map(opCard).join("") : `<p class="empty">Încă nu există nicio operație. Încearcă „Probă sigură”.</p>`;

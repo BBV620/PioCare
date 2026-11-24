@@ -64,8 +64,12 @@ Jurnalul: `%LOCALAPPDATA%\PioCare\journal\<id>\operation.json`, lângă fișiere
 **Administrator**: interfața rulează ca utilizator. Când un plan atinge HKLM sau servicii, PioCare se repornește pe sine cu
 `--elevated <cerere> <rezultat>` (fereastra UAC), execută doar acel plan și se închide.
 
-Testat pe PC-ul de lucru doar în `HKCU\Software\PioCare` (fără risc). Schimbările de sistem (servicii, HKLM, copie completă)
-se testează întâi într-o mașină virtuală Hyper-V.
+Testat pe PC-ul de lucru doar în `HKCU\Software\PioCare` (fără risc). Partea cu administrator a fost testată pe 24 nov 2026
+în mașina virtuală Hyper-V „PioCare-Test” (Windows 10 LTSC 2021): copie completă (firewall + servicii), pornirea Protecției sistemului
+cu primul punct de restaurare, schimbarea tipului de pornire al unui serviciu (WSearch) și anularea ei. Script VM: `tools/vm/creeaza-vm.ps1`.
+
+**Protecția sistemului**: pe un Windows proaspăt e adesea oprită. PioCare o detectează și oferă pornirea ei prin jurnal (cu anulare).
+Limita Windows de un punct la 24 de ore este tratată ca informație, nu ca eroare.
 
 ## Pachetele de reguli
 

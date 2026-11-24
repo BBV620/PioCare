@@ -139,6 +139,18 @@ pub fn elevated_main(req: &str, res: &str) -> i32 {
 
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            #[cfg(windows)]
+            {
+                use tauri::Manager;
+                if let Some(w) = app.get_webview_window("main") {
+                    if let Ok(h) = w.hwnd() {
+                        sys::set_main_hwnd(h.0 as isize);
+                    }
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             system_overview,
             rules_info,

@@ -77,6 +77,10 @@ if ($after -gt $before) { 'CREAT' } elseif ($w) { 'SARIT: ' + $w[0] } else { 'SA
         &[("PIOCARE_RP_DESC", &desc)],
     ) {
         Ok(s) if s.starts_with("CREAT") => "punct de restaurare creat".into(),
+        // Limita Windows (SystemRestorePointCreationFrequency, implicit 24 h): există deja un punct recent.
+        Ok(s) if s.starts_with("SARIT") => {
+            "punct de restaurare recent deja existent (Windows face cel mult unul la 24 de ore); copiile PioCare sunt făcute".into()
+        }
         Ok(s) => format!("punct de restaurare necreat ({})", s.lines().last().unwrap_or("").trim()),
         Err(e) => format!("punct de restaurare necreat ({e})"),
     }
@@ -133,6 +137,13 @@ pub fn export_firewall(file: &Path) -> Result<(), String> {
     if file.exists() { Ok(()) } else { Err("netsh nu a produs fișierul".into()) }
 }
 
+/// Fereastra principală PioCare, ca fereastra UAC să i se atașeze și să apară în față.
+static MAIN_HWND: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
+
+pub fn set_main_hwnd(h: isize) {
+    MAIN_HWND.store(h, std::sync::atomic::Ordering::Relaxed);
+}
+
 /// Pornește același executabil cu drepturi de administrator (fereastra UAC) și așteaptă să termine.
 #[cfg(windows)]
 pub fn run_self_elevated(args: &[String]) -> Result<u32, String> {
@@ -152,7 +163,12 @@ pub fn run_self_elevated(args: &[String]) -> Result<u32, String> {
         info.lpParameters = par.as_ptr();
         info.nShow = 0; // SW_HIDE
         // Fereastra UAC se leagă de fereastra PioCare, ca să apară în față, nu doar în bara de jos.
-        info.hwnd = windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
+        let main = MAIN_HWND.load(std::sync::atomic::Ordering::Relaxed);
+        info.hwnd = if main != 0 {
+            main as *mut core::ffi::c_void
+        } else {
+            windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow()
+        };
         if ShellExecuteExW(&mut info) == 0 {
             return Err(if GetLastError() == 1223 {
                 "ai refuzat cererea de administrator; nu s-a schimbat nimic".into()
