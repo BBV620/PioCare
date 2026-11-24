@@ -13,6 +13,7 @@ const STATUS = {
   partially_undone: ["anulată parțial", "bad"],
   failed: ["eșuată, nimic schimbat", "bad"],
   backup_done: ["copie făcută", "ok"],
+  cleanup_done: ["curățare făcută", "ok"],
 };
 const STEP = { pending: "în așteptare", applied: "aplicat", failed: "eșuat", undone: "anulat", undo_failed: "anulare eșuată" };
 
@@ -449,6 +450,64 @@ $("fw-activity").addEventListener("click", async (e) => {
   } catch (err) {
     fwStatusMsg(String(err), "bad");
     b.disabled = false;
+  }
+});
+
+// ---------- întreținere ----------
+const mb = (b) => (b >= 1073741824 ? `${fmt(b / 1073741824, 2)} GB` : `${fmt(b / 1048576, 1)} MB`);
+function mtStatus(text, kind = "") {
+  const s = $("mt-status");
+  s.textContent = text;
+  s.className = `status ${kind}`;
+  if (!text) s.classList.add("hidden");
+}
+function updateMtClean() {
+  const boxes = [...document.querySelectorAll("#mt-results input:checked")];
+  const total = boxes.reduce((a, c) => a + Number(c.dataset.bytes || 0), 0);
+  $("btn-mt-clean").disabled = boxes.length === 0;
+  $("btn-mt-clean").textContent = boxes.length ? `Curăță selectate (${mb(total)}${boxes.some((c) => c.dataset.unknown) ? "+" : ""})` : "Curăță selectate";
+}
+async function scanMaintenance() {
+  $("btn-mt-scan").disabled = true;
+  mtStatus("Se măsoară…", "warn");
+  try {
+    const s = await invoke("maintenance_scan");
+    mtStatus(`Se pot elibera cel puțin ${mb(s.total_bytes)} · reguli v${s.rules_version}`, "ok");
+    $("mt-results").innerHTML = `<div class="op"><ul class="finds">${s.items
+      .map((i) => {
+        const [rl, rc] = RISK[i.risk] || [i.risk, ""];
+        const size = i.bytes == null ? (i.admin ? "mărime necunoscută (cere administrator)" : "mărime variabilă") : `${mb(i.bytes)}${i.files != null ? ` · ${i.files} fișiere` : ""}`;
+        const empty = i.bytes === 0;
+        const checked = i.default && !i.blocked && !empty;
+        return `<li><label><input type="checkbox" data-mt="${esc(i.id)}" data-bytes="${i.bytes || 0}" ${i.bytes == null ? 'data-unknown="1"' : ""} ${checked ? "checked" : ""} ${i.blocked || empty ? "disabled" : ""}>
+          <span><b>${esc(i.title)}</b> <span class="badge ${rc}">${rl}</span>${i.admin ? ' <span class="tag">administrator</span>' : ""}
+          <div class="sub">${size}</div>
+          <div class="sub">${esc(i.why)}</div>
+          ${i.blocked ? `<div class="sub warnline">${esc(i.blocked)}</div>` : ""}</span></label></li>`;
+      })
+      .join("")}</ul></div>`;
+    updateMtClean();
+  } catch (e) {
+    mtStatus(String(e), "bad");
+  } finally {
+    $("btn-mt-scan").disabled = false;
+  }
+}
+$("mt-results").addEventListener("change", updateMtClean);
+$("btn-mt-scan").addEventListener("click", scanMaintenance);
+$("btn-mt-clean").addEventListener("click", async () => {
+  const ids = [...document.querySelectorAll("#mt-results input:checked")].map((c) => c.dataset.mt);
+  if (!ids.length) return;
+  $("btn-mt-clean").disabled = $("btn-mt-scan").disabled = true;
+  mtStatus("Se curăță… (pentru categoriile de sistem Windows va cere confirmarea de administrator; DISM poate dura câteva minute)", "warn");
+  try {
+    const op = await invoke("maintenance_clean", { ids });
+    await scanMaintenance();
+    mtStatus(`${op.title}. Detalii în „Jurnal și anulare”.`, "ok");
+  } catch (e) {
+    mtStatus(String(e), "bad");
+    $("btn-mt-scan").disabled = false;
+    updateMtClean();
   }
 });
 

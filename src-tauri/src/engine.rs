@@ -22,6 +22,7 @@ pub enum Request {
     Apply { plan: Plan },
     Undo { id: String },
     FullBackup,
+    Cleanup { ids: Vec<String> },
 }
 
 #[derive(Serialize, Deserialize)]
@@ -43,6 +44,7 @@ pub fn needs_admin(req: &Request, root: &Path) -> Result<bool, String> {
         Request::Apply { plan } => plan.actions.iter().any(|a| a.needs_admin()),
         Request::Undo { id } => journal::load(root, id)?.needs_admin,
         Request::FullBackup => true,
+        Request::Cleanup { ids } => crate::maintenance::needs_admin(ids)?,
     })
 }
 
@@ -99,7 +101,36 @@ pub fn execute(root: &Path, req: Request) -> Result<Operation, String> {
         Request::Apply { plan } => apply(root, plan),
         Request::Undo { id } => undo(root, &id),
         Request::FullBackup => full_backup(root),
+        Request::Cleanup { ids } => cleanup(root, &ids),
     }
+}
+
+fn cleanup(root: &Path, ids: &[String]) -> Result<Operation, String> {
+    if ids.is_empty() {
+        return Err("nicio categorie selectată".into());
+    }
+    let admin = crate::maintenance::needs_admin(ids)?;
+    let mut op = Operation::new(root, OpKind::Cleanup, "Întreținere: curățare", Some("maintenance".into()), admin)?;
+    op.save(root)?;
+    let results = crate::maintenance::clean(ids)?;
+    let (mut files, mut bytes) = (0u64, 0u64);
+    for r in &results {
+        files += r.files;
+        bytes += r.bytes;
+        let mut line = format!("{}: {} fișiere, {:.1} MB", r.title, r.files, r.bytes as f64 / 1_048_576.0);
+        if r.skipped > 0 {
+            line.push_str(&format!(" ({} în uz, sărite)", r.skipped));
+        }
+        if let Some(n) = &r.note {
+            line.push_str(&format!(" · {n}"));
+        }
+        op.notes.push(line);
+    }
+    op.title = format!("Întreținere: {:.1} MB eliberați ({} fișiere)", bytes as f64 / 1_048_576.0, files);
+    op.notes.push("Curățarea nu se poate anula: sunt fișiere temporare și cache-uri, refăcute automat la nevoie.".into());
+    op.status = OpStatus::CleanupDone;
+    op.save(root)?;
+    Ok(op)
 }
 
 fn apply(root: &Path, plan: Plan) -> Result<Operation, String> {

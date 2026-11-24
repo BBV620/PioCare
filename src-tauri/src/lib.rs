@@ -6,6 +6,7 @@ mod cleaner;
 mod engine;
 mod firewall;
 mod journal;
+mod maintenance;
 mod rules;
 mod services;
 mod sys;
@@ -202,6 +203,19 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Întreținere: cât se poate elibera (doar citire).
+#[tauri::command(async)]
+fn maintenance_scan() -> Result<maintenance::Scan, String> {
+    maintenance::scan()
+}
+
+/// Întreținere: curăță categoriile bifate (cu administrator doar dacă e nevoie).
+#[tauri::command(async)]
+fn maintenance_clean(ids: Vec<String>) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    engine::run(&root, Request::Cleanup { ids }).map(|o| view(&root, o))
+}
+
 /// Starea Protecției sistemului pe C: (null = necunoscută fără administrator).
 #[tauri::command]
 fn protection_status() -> Option<bool> {
@@ -264,6 +278,8 @@ pub fn run() {
             services_list,
             services_analyze,
             services_apply,
+            maintenance_scan,
+            maintenance_clean,
             firewall_status,
             firewall_apply,
             firewall_activity,

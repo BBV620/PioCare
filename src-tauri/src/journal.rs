@@ -12,6 +12,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub enum OpKind {
     Change,
     Backup,
+    /// Curățare de fișiere temporare/cache: fără anulare (fișierele se refac automat).
+    Cleanup,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -25,6 +27,7 @@ pub enum OpStatus {
     PartiallyUndone,
     Failed,
     BackupDone,
+    CleanupDone,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]

@@ -11,7 +11,7 @@
     <div class="brand"><span class="logo">P</span> PioCare</div>
     <nav>
       <a class="active" href="#panou" data-page="panou">Panou</a>
-      <a class="soon" href="#">Întreținere</a>
+      <a href="#intretinere" data-page="intretinere">Întreținere</a>
       <a href="#registru" data-page="registru">Registru curat</a>
       <a href="#servicii" data-page="servicii">Componente și servicii</a>
       <a href="#firewall" data-page="firewall">Firewall</a>
@@ -46,6 +46,19 @@
         </div>
         <p class="note">Nicio schimbare nu se face fără copie de siguranță și fără posibilitate de anulare.</p>
       </section>
+    </div>
+
+    <div class="page hidden" id="page-intretinere">
+      <header>
+        <h1>Întreținere generală</h1>
+        <div class="actions">
+          <button class="ghost" id="btn-mt-scan">Scanează</button>
+          <button id="btn-mt-clean" disabled>Curăță selectate</button>
+        </div>
+      </header>
+      <p class="lead">Fișiere temporare, cache-uri și rapoarte de erori: lucruri pe care Windows și programele le refac singure. Documentele, pozele, parolele și istoricul browserelor nu sunt atinse. Curățarea nu se poate anula, dar nici nu e nevoie: nu se pierde nimic personal.</p>
+      <div id="mt-status" class="status hidden"></div>
+      <div id="mt-results"><p class="empty">Apasă „Scanează” ca să vezi cât spațiu se poate elibera. Scanarea doar citește.</p></div>
     </div>
 
     <div class="page hidden" id="page-registru">
