@@ -90,6 +90,10 @@ button.ghost { background: transparent; color: var(--text); border: 1px solid va
 .feats label, .seg label { cursor: pointer; font-size: 13.5px; }
 .warnline { color: var(--warn); }
 .needline { color: var(--accent); }
+.help { max-width: 860px; line-height: 1.6; }
+.help h2 { font-size: 15px; margin: 18px 0 4px; }
+.help h2:first-child { margin-top: 0; }
+.help code { font-size: 12.5px; background: var(--bg); padding: 1px 5px; border-radius: 4px; }
 .svc.dim { opacity: .7; }
 .legend { margin: 0 0 6px; }
 .search { width: 100%; max-width: 420px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; margin-bottom: 10px; }

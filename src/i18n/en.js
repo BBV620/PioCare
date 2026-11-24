@@ -9,6 +9,9 @@
   "nav.intretinere": "Maintenance",
   "nav.programe": "Uninstall",
   "nav.pornire": "Startup",
+  "nav.ajutor": "Help",
+  "help.title": "Help",
+  "help.about": "PioCare {v} · free · © Piogrup · No ads, no data sent over the internet.",
 
   "st.title": "Startup programs",
   "st.lead": "Everything that starts on its own with Windows: programs from the registry, from the Startup folder and scheduled tasks at sign-in. Disabling works exactly like Task Manager: nothing is deleted, the program stays installed and you can still start it manually. Every change can be undone from “Journal & undo”.",
@@ -230,7 +233,7 @@
   "j.protect.text": "PioCare makes its own backups anyway, but a restore point is an extra safety net.",
   "j.protect.btn": "Turn on System Protection",
   "j.lead": "Every change made by PioCare is listed here, with the previous state saved. The “Undo” button brings it back exactly as it was.",
-  "j.empty": "No operations yet. Try “Safe test”.",
+  "j.empty": "No operations yet.",
   "j.withAdmin": " · with administrator rights",
   "j.rule": " · rule {r}",
   "j.copies": "Backups: {l}",

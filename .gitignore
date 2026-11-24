@@ -41,3 +41,6 @@ logs/
 
 # Pachete de reguli semnate (se generează cu tools/semneaza-reguli.cjs)
 dist-reguli/
+
+# Capturi de ecran de test (conțin date ale PC-ului)
+docs/

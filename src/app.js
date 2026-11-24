@@ -122,6 +122,7 @@ function show(page) {
   if (page === "firewall") loadFirewallPage();
   if (page === "programe") loadPrograms();
   if (page === "pornire") loadStartup();
+  if (page === "ajutor") loadHelp();
 }
 document.querySelectorAll("nav a").forEach((a) =>
   a.addEventListener("click", (e) => {
@@ -255,8 +256,6 @@ $("ops").addEventListener("click", (e) => {
   if (b.dataset.undo) runAction("undo_operation", { id: b.dataset.undo }, "j.undoing");
   if (b.dataset.open) invoke("open_folder", { path: b.dataset.open }).catch((err) => setStatus(String(err), "bad"));
 });
-$("btn-test").addEventListener("click", () => runAction("safe_test_operation", {}, "j.testing"));
-$("btn-svc").addEventListener("click", () => runAction("service_test_operation", {}, "j.svcTesting"));
 $("btn-backup").addEventListener("click", () => runAction("full_backup", {}, "j.backingUp"));
 $("btn-protect").addEventListener("click", () => runAction("enable_protection", {}, "j.protecting"));
 
@@ -599,6 +598,17 @@ $("btn-mt-clean").addEventListener("click", async () => {
     updateMtClean();
   }
 });
+
+// ---------- ajutor ----------
+async function loadHelp() {
+  const help = window.PIOCARE_HELP || {};
+  $("help-body").innerHTML = help[LANG] || help.ro || ""; // conținut static, scris de noi (fără date din afară)
+  let v = "";
+  try {
+    v = await window.__TAURI__.app.getVersion();
+  } catch {}
+  $("about").textContent = t("help.about", { v });
+}
 
 // ---------- programe la pornire ----------
 const stStatus = statusBox("st-status");

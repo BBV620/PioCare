@@ -18,6 +18,7 @@ pub struct RegData {
     pub hex: String,
 }
 
+#[allow(dead_code)] // folosite de teste și de regulile viitoare
 impl RegData {
     pub fn dword(v: u32) -> Self {
         RegData { kind: 4, hex: to_hex(&v.to_le_bytes()) }

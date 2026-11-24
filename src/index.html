@@ -40,6 +40,7 @@
       <a href="#servicii" data-page="servicii" data-i18n="nav.servicii"></a>
       <a href="#firewall" data-page="firewall" data-i18n="nav.firewall"></a>
       <a href="#jurnal" data-page="jurnal" data-i18n="nav.jurnal"></a>
+      <a href="#ajutor" data-page="ajutor" data-i18n="nav.ajutor"></a>
     </nav>
     <div class="side-bottom">
       <select id="lang-select" aria-label="Language"></select>
@@ -193,12 +194,16 @@
       <div id="fw-activity"></div>
     </div>
 
+    <div class="page hidden" id="page-ajutor">
+      <header><h1 data-i18n="help.title"></h1></header>
+      <div class="op help" id="help-body"></div>
+      <p class="sub" id="about"></p>
+    </div>
+
     <div class="page hidden" id="page-jurnal">
       <header>
         <h1 data-i18n="j.title"></h1>
         <div class="actions">
-          <button class="ghost" id="btn-test" data-i18n="j.test" data-i18n-title="j.test.tip"></button>
-          <button class="ghost" id="btn-svc" data-i18n="j.svc" data-i18n-title="j.svc.tip"></button>
           <button id="btn-backup" data-i18n="j.backup" data-i18n-title="j.backup.tip"></button>
         </div>
       </header>
@@ -215,6 +220,8 @@
 
   <script src="i18n/ro.js"></script>
   <script src="i18n/en.js"></script>
+  <script src="i18n/help-ro.js"></script>
+  <script src="i18n/help-en.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

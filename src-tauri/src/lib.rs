@@ -16,7 +16,7 @@ mod startup;
 mod system;
 mod uninstall;
 
-use actions::{ActionSpec, RegData, Root};
+use actions::ActionSpec;
 use engine::{Plan, Request};
 use journal::Operation;
 
@@ -76,40 +76,6 @@ fn undo_operation(id: String) -> Result<OpView, String> {
 fn full_backup() -> Result<OpView, String> {
     let root = journal::default_root()?;
     engine::run(&root, Request::FullBackup).map(|o| view(&root, o))
-}
-
-/// Operație de probă, fără risc: scrie doar în HKCU\Software\PioCare\Proba.
-#[tauri::command(async)]
-fn safe_test_operation() -> Result<OpView, String> {
-    let root = journal::default_root()?;
-    let key = "Software\\PioCare\\Proba".to_string();
-    let plan = Plan {
-        title: crate::i18n::t("Probă sigură (registrul utilizatorului)", "Safe test (user registry)"),
-        rule_id: Some("test.proba".into()),
-        actions: vec![
-            ActionSpec::RegSetValue { root: Root::HKCU, path: key.clone(), name: "Activ".into(), value: RegData::dword(1) },
-            ActionSpec::RegSetValue {
-                root: Root::HKCU,
-                path: key,
-                name: "Mesaj".into(),
-                value: RegData::sz("Scris de PioCare; se șterge la anulare."),
-            },
-        ],
-    };
-    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
-}
-
-/// Probă de test pentru servicii (temporară, pentru verificarea în mașina virtuală):
-/// Windows Search (WSearch) trecut pe pornire manuală. Anularea readuce tipul inițial.
-#[tauri::command(async)]
-fn service_test_operation() -> Result<OpView, String> {
-    let root = journal::default_root()?;
-    let plan = Plan {
-        title: crate::i18n::t("Probă serviciu: Windows Search pe pornire manuală", "Service test: Windows Search set to manual"),
-        rule_id: Some("test.serviciu".into()),
-        actions: vec![ActionSpec::ServiceStartType { name: "WSearch".into(), start: actions::StartType::Manual }],
-    };
-    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
 /// Registru curat: scanare (doar citire).
@@ -386,9 +352,7 @@ pub fn run() {
             is_admin,
             undo_operation,
             full_backup,
-            safe_test_operation,
             protection_status,
-            service_test_operation,
             registry_scan,
             registry_clean,
             services_list,

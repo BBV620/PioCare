@@ -10,6 +10,9 @@
   "nav.intretinere": "Întreținere",
   "nav.programe": "Dezinstalare",
   "nav.pornire": "Pornire",
+  "nav.ajutor": "Ajutor",
+  "help.title": "Ajutor",
+  "help.about": "PioCare {v} · gratuit · © Piogrup · Fără reclame, fără date trimise pe internet.",
 
   "st.title": "Programe la pornire",
   "st.lead": "Tot ce pornește singur odată cu Windows: programe din registru, din folderul Startup și sarcini programate la autentificare. Dezactivarea se face exact ca în Task Manager: nimic nu se șterge, iar programul rămâne instalat și îl poți porni oricând manual. Fiecare schimbare se poate anula din „Jurnal și anulare”.",
@@ -231,7 +234,7 @@
   "j.protect.text": "PioCare își face oricum copiile proprii, dar un punct de restaurare e o plasă de siguranță în plus.",
   "j.protect.btn": "Pornește Protecția sistemului",
   "j.lead": "Fiecare schimbare făcută de PioCare apare aici, cu starea de dinainte salvată. Butonul „Anulează” o readuce exact cum era.",
-  "j.empty": "Încă nu există nicio operație. Încearcă „Probă sigură”.",
+  "j.empty": "Încă nu există nicio operație.",
   "j.withAdmin": " · cu drepturi de administrator",
   "j.rule": " · regula {r}",
   "j.copies": "Copii: {l}",
