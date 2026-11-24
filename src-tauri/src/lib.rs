@@ -12,6 +12,7 @@ mod maintenance;
 mod rules;
 mod services;
 mod sys;
+mod startup;
 mod system;
 mod uninstall;
 
@@ -206,6 +207,33 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+/// Programe la pornire (doar citire).
+#[tauri::command(async)]
+fn startup_list() -> Vec<startup::StartupItem> {
+    startup::list()
+}
+
+/// Pornește/oprește elementele bifate (ca Task Manager), prin motor, cu anulare.
+#[tauri::command(async)]
+fn startup_set(ids: Vec<String>, enable: bool) -> Result<OpView, String> {
+    let root = journal::default_root()?;
+    let chosen: Vec<_> = startup::list().into_iter().filter(|i| ids.contains(&i.id) && i.enabled != enable && (enable || !i.protected)).collect();
+    if chosen.is_empty() {
+        return Err(i18n::t("nimic de schimbat", "nothing to change"));
+    }
+    let names: Vec<String> = chosen.iter().map(|i| i.name.clone()).collect();
+    let plan = Plan {
+        title: if enable {
+            i18n::t(&format!("Pornire: activat {}", names.join(", ")), &format!("Startup: enabled {}", names.join(", ")))
+        } else {
+            i18n::t(&format!("Pornire: dezactivat {}", names.join(", ")), &format!("Startup: disabled {}", names.join(", ")))
+        },
+        rule_id: Some("startup".into()),
+        actions: chosen.into_iter().map(|i| if enable { i.enable } else { i.disable }).collect(),
+    };
+    engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
+}
+
 /// Dezinstalator: lista programelor (doar citire).
 #[tauri::command(async)]
 fn programs_list() -> Vec<uninstall::Program> {
@@ -359,6 +387,8 @@ pub fn run() {
             services_analyze,
             services_apply,
             explain,
+            startup_list,
+            startup_set,
             programs_list,
             program_exists,
             program_uninstall,

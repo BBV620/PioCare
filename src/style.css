@@ -25,8 +25,8 @@ nav a.soon { opacity: .55; cursor: default; }
 .dialog h2 { margin: 0 0 18px; }
 .dialog.left { text-align: left; width: min(620px, 94vw); max-height: 86vh; overflow: auto; }
 .dialog.left h2 { margin: 0 0 6px; }
-.dialog .exsec { margin: 12px 0 0; }
-.dialog .exsec b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 3px; }
+.exsec { margin: 12px 0 0; }
+.exsec b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 3px; }
 .info { background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; font-size: 12px; line-height: 18px; margin-left: 6px; cursor: help; }
 .info:hover { background: rgba(31,138,112,.1); }
 .lang-buttons { display: flex; gap: 12px; justify-content: center; margin-bottom: 14px; }
@@ -90,6 +90,7 @@ button.ghost { background: transparent; color: var(--text); border: 1px solid va
 .feats label, .seg label { cursor: pointer; font-size: 13.5px; }
 .warnline { color: var(--warn); }
 .needline { color: var(--accent); }
+.svc.dim { opacity: .7; }
 .legend { margin: 0 0 6px; }
 .search { width: 100%; max-width: 420px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; margin-bottom: 10px; }
 .map { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }

@@ -121,6 +121,7 @@ function show(page) {
   if (page === "servicii") loadServicesPage();
   if (page === "firewall") loadFirewallPage();
   if (page === "programe") loadPrograms();
+  if (page === "pornire") loadStartup();
 }
 document.querySelectorAll("nav a").forEach((a) =>
   a.addEventListener("click", (e) => {
@@ -590,9 +591,55 @@ $("btn-mt-clean").addEventListener("click", async () => {
   }
 });
 
+// ---------- programe la pornire ----------
+const stStatus = statusBox("st-status");
+
+async function loadStartup() {
+  $("st-list").innerHTML = `<p class="empty">${esc(t("st.loading"))}</p>`;
+  try {
+    const items = await invoke("startup_list");
+    const on = items.filter((i) => i.enabled).length;
+    stStatus(t("st.summary", { n: items.length, on }), on > 8 ? "warn" : "ok");
+    $("st-list").innerHTML = `<div class="map">${items
+      .map(
+        (i) => `<div class="svc ${i.enabled ? "" : "dim"}">
+        <div><b>${esc(i.name)}</b> <span class="badge ${i.enabled ? "ok" : "muted"}">${esc(i.enabled ? t("st.on") : t("st.off"))}</span>${i.file_name ? infoBtn("program", i.file_name, i.path || "") : ""}</div>
+        <div class="sub">${esc([i.publisher || t("st.noPublisher"), t(`st.src.${i.source}`)].join(" · "))}</div>
+        <div class="sub">${esc(i.command)}</div>
+        ${i.missing ? `<div class="sub warnline">${esc(t("st.missing"))}</div>` : ""}
+        ${i.protected ? `<div class="sub">${esc(t("st.protected"))}</div>` : ""}
+        <div class="op-actions">
+          ${i.protected && i.enabled ? "" : `<button class="ghost" data-st="${esc(i.id)}" data-en="${i.enabled ? "0" : "1"}">${esc(i.enabled ? t("st.disable") : t("st.enable"))}</button>`}
+          ${i.needs_admin ? `<span class="tag">${esc(t("common.admin"))}</span>` : ""}
+        </div>
+      </div>`
+      )
+      .join("")}</div>`;
+  } catch (e) {
+    stStatus(String(e), "bad");
+  }
+}
+
+$("btn-st-refresh").addEventListener("click", loadStartup);
+$("st-list").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-st]");
+  if (!b) return;
+  b.disabled = true;
+  stStatus(t("st.working"), "warn");
+  try {
+    const op = await invoke("startup_set", { ids: [b.dataset.st], enable: b.dataset.en === "1" });
+    await loadStartup();
+    stStatus(`${t("j.result", { title: op.title, label: statusLabel(op.status) })} ${t("st.afterRestart")} ${t("common.undoHint")}`, op.status === "applied" ? "ok" : "bad");
+  } catch (err) {
+    stStatus(String(err), "bad");
+    b.disabled = false;
+  }
+});
+
 // ---------- dezinstalare ----------
 let programs = [];
 let current = null; // programul în lucru (informațiile lui rămân după ce dispare din registru)
+let countBefore = 0;
 const unStatus = statusBox("un-status");
 const fmtDate = (d) => (/^\d{8}$/.test(d) ? `${d.slice(6, 8)}.${d.slice(4, 6)}.${d.slice(0, 4)}` : "");
 const KIND = (k) => t(`un.kind.${k}`);
@@ -632,6 +679,9 @@ async function scanLeftovers() {
   }
   $("un-badge").textContent = t("un.removed");
   $("un-badge").className = "badge ok";
+  // Lista de jos se actualizează imediat (programul nu mai e instalat).
+  programs = await invoke("programs_list");
+  renderPrograms();
   if (!r.leftovers.length) {
     unStatus(t("un.noLeftovers"), "ok");
     await showAfter(null);
@@ -650,7 +700,7 @@ async function scanLeftovers() {
 }
 
 async function showAfter(op) {
-  const before = programs.length;
+  const before = countBefore;
   const now = await invoke("programs_list");
   let dead = "?";
   try {
@@ -678,6 +728,7 @@ $("un-list").addEventListener("click", async (e) => {
   if (!b) return;
   current = programs.find((p) => p.id === b.dataset.un);
   if (!current) return;
+  countBefore = programs.length;
   $("un-flow").classList.remove("hidden");
   $("un-name").textContent = current.name;
   $("un-sub").textContent = [current.publisher, current.version].filter(Boolean).join(" · ");

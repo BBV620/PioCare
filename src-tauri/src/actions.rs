@@ -53,6 +53,8 @@ pub enum ActionSpec {
     FirewallProfileOn { profile: String },
     /// Folder/fișier rămas de la un program dezinstalat: mutat în carantină (pe același disc), nu șters.
     Quarantine { path: String },
+    /// Sarcină programată (în afara celor Microsoft): pornită / oprită.
+    ScheduledTask { path: String, name: String, enabled: bool },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -61,6 +63,7 @@ pub enum Before {
     Protection { enabled: bool },
     /// Unde a fost mutat în carantină.
     Quarantined { stored: String },
+    Task { enabled: bool },
     FwRule { existed: bool },
     FwProfile { enabled: bool, inbound: String },
     /// Starea unei valori: dacă exista cheia și ce valoare era (None = nu exista).
@@ -79,7 +82,8 @@ impl ActionSpec {
             ActionSpec::ServiceStartType { .. }
             | ActionSpec::SystemProtection { .. }
             | ActionSpec::FirewallBlock(_)
-            | ActionSpec::FirewallProfileOn { .. } => true,
+            | ActionSpec::FirewallProfileOn { .. }
+            | ActionSpec::ScheduledTask { .. } => true,
             ActionSpec::Quarantine { path } => crate::uninstall::quarantine_needs_admin(path),
         }
     }
@@ -97,6 +101,13 @@ impl ActionSpec {
             ActionSpec::FirewallBlock(r) => crate::i18n::t(&format!("Firewall: blochează {}", r.display), &format!("Firewall: block {}", r.display)),
             ActionSpec::FirewallProfileOn { profile } => crate::i18n::t(&format!("Firewall: profilul {profile} pornit, intrări blocate"), &format!("Firewall: {profile} profile on, inbound blocked")),
             ActionSpec::Quarantine { path } => crate::i18n::t(&format!("Mută în carantină: {path}"), &format!("Move to quarantine: {path}")),
+            ActionSpec::ScheduledTask { path, name, enabled } => {
+                if *enabled {
+                    crate::i18n::t(&format!("Sarcină programată {path}{name}: pornită"), &format!("Scheduled task {path}{name}: enabled"))
+                } else {
+                    crate::i18n::t(&format!("Sarcină programată {path}{name}: oprită"), &format!("Scheduled task {path}{name}: disabled"))
+                }
+            }
         }
     }
 }
@@ -314,6 +325,7 @@ mod win {
                 let stored = crate::uninstall::quarantine_target(path, &op_id, idx);
                 Ok(Before::Quarantined { stored: stored.to_string_lossy().into_owned() })
             }
+            ActionSpec::ScheduledTask { path, name, .. } => Ok(Before::Task { enabled: crate::startup::task_enabled(path, name)? }),
         }
     }
 
@@ -341,6 +353,7 @@ mod win {
             ActionSpec::SystemProtection { enabled } => crate::sys::set_protection_c(*enabled),
             ActionSpec::FirewallBlock(r) => crate::firewall::add_rule(r),
             ActionSpec::FirewallProfileOn { profile } => crate::firewall::set_profile(profile, true, "Block"),
+            ActionSpec::ScheduledTask { path, name, enabled } => crate::startup::set_task(path, name, *enabled),
         }
     }
 
@@ -377,6 +390,7 @@ mod win {
             (ActionSpec::FirewallProfileOn { profile }, Before::FwProfile { enabled, inbound }) => {
                 crate::firewall::set_profile(profile, *enabled, inbound)
             }
+            (ActionSpec::ScheduledTask { path, name, .. }, Before::Task { enabled }) => crate::startup::set_task(path, name, *enabled),
             (ActionSpec::Quarantine { path }, Before::Quarantined { stored }) => {
                 if std::fs::symlink_metadata(path).is_ok() {
                     return Err(crate::i18n::t(&format!("există deja ceva la {path}; nu suprascriu"), &format!("something already exists at {path}; not overwriting")));

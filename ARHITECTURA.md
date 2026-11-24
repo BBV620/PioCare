@@ -101,6 +101,6 @@ PioCare/
 | 0.7 ✓ | Limbi: română + engleză (interfață `src/i18n/*.js`, motor `i18n::t`, pachete de reguli cu texte `{ro, en}`), alegerea limbii la prima pornire (și în instalator), schimbabilă oricând; textele în fișiere separate, ca să se poată adăuga alte limbi (ca la PioCut). |
 | 0.8 ✓ | „Ce este?” pentru fiecare serviciu, proces, regulă și program din listele PioCare: ce face, dacă e sigur de oprit, ce se strică. Explicațiile stau în pachetele de reguli (RO/EN), deci se actualizează odată cu ele. |
 | 0.9 ✓ | Dezinstalator încorporat: lista programelor → dezinstalatorul oficial al programului → scanare imediată a resturilor (registru, foldere, scurtături, porniri automate, servicii) → ștergere doar cu copie și anulare → starea sistemului după. Componentele comune/sistem nu se ating. |
-| 0.10 | Programe la pornire: tot ce pornește odată cu Windows (chei Run, foldere Startup, sarcini programate la autentificare, starea StartupApproved), cu producător, impact și „Ce este?”; dezactivare sau amânare (nu ștergere) prin jurnal, cu anulare. |
+| 0.10 ✓ | Programe la pornire: tot ce pornește odată cu Windows (chei Run, foldere Startup, sarcini programate la autentificare, starea StartupApproved), cu producător, impact și „Ce este?”; dezactivare sau amânare (nu ștergere) prin jurnal, cu anulare. |
 | 0.11 | Pachete de reguli semnate și actualizare separată. |
 | 1.0 | Instalator semnat, manual, prezentare. |
