@@ -84,6 +84,7 @@
   "common.undoHint": "It can be undone from “Journal & undo”.",
 
   "status.in_progress": "in progress",
+  "status.interrupted": "interrupted (e.g. restart): can be reverted",
   "status.applied": "applied",
   "status.rolled_back": "failed, rolled back automatically",
   "status.undone": "undone",

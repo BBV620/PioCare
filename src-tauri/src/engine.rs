@@ -240,12 +240,34 @@ fn rollback(op: &mut Operation, dir: &Path, upto: usize) -> bool {
     all_ok
 }
 
+/// Momentul ultimei scrieri a jurnalului operației (secunde Unix).
+fn last_write(root: &Path, op: &Operation) -> u64 {
+    std::fs::metadata(op.dir(root).join("operation.json"))
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
 fn undo(root: &Path, id: &str) -> Result<Operation, String> {
     let mut op = journal::load(root, id)?;
     if op.kind != OpKind::Change {
         return Err(crate::i18n::t("această operație nu se anulează", "this operation cannot be undone"));
     }
-    if !matches!(op.status, OpStatus::Applied | OpStatus::PartiallyUndone) {
+    // Operație întreruptă (ex. calculatorul a fost repornit în timpul aplicării): se readuce tot ce
+    // avea starea de dinainte salvată. Readucerea e sigură și pentru pașii neaplicați, pentru că
+    // fiecare pas își rescrie doar valoarea de dinainte (carantina neaplicată se sare).
+    if op.status == OpStatus::InProgress {
+        if journal::now().saturating_sub(last_write(root, &op)) < 120 {
+            return Err(crate::i18n::t("operația încă rulează; încearcă peste un minut", "the operation is still running; try again in a minute"));
+        }
+        for s in op.steps.iter_mut() {
+            if s.state == StepState::Pending && s.before.is_some() && !matches!(s.action, ActionSpec::Quarantine { .. }) {
+                s.state = StepState::Applied;
+            }
+        }
+    } else if !matches!(op.status, OpStatus::Applied | OpStatus::PartiallyUndone) {
         return Err(crate::i18n::t("operația nu este în starea „aplicată”", "the operation is not in the applied state"));
     }
     // Pașii care au eșuat la o anulare anterioară se reîncearcă.
@@ -347,6 +369,33 @@ mod tests {
         assert!(execute(&root, Request::Undo { id: op.id.clone() }).is_err());
         assert_eq!(journal::list(&root).len(), 1);
         let _ = hkcu().delete_subkey_all(KEY);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn interrupted_operation_can_be_reverted() {
+        let root = tmp_root("interrupted");
+        let key = "Software\\PioCare\\UnitTest3";
+        let _ = hkcu().delete_subkey_all(key);
+        let plan = Plan {
+            title: "t".into(),
+            rule_id: None,
+            actions: vec![
+                ActionSpec::RegSetValue { root: Root::HKCU, path: key.into(), name: "a".into(), value: RegData::dword(1) },
+                ActionSpec::RegSetValue { root: Root::HKCU, path: key.into(), name: "b".into(), value: RegData::dword(2) },
+            ],
+        };
+        let mut op = execute(&root, Request::Apply { plan }).unwrap();
+        // Simulăm o repornire după primul pas: al doilea „neaplicat”, operația rămasă „în curs”, scrisă acum 10 minute.
+        op.status = OpStatus::InProgress;
+        op.steps[1].state = StepState::Pending;
+        op.save(&root).unwrap();
+        let f = std::fs::File::options().write(true).open(op.dir(&root).join("operation.json")).unwrap();
+        f.set_modified(std::time::SystemTime::now() - std::time::Duration::from_secs(600)).unwrap();
+        drop(f);
+        let op = execute(&root, Request::Undo { id: op.id }).unwrap();
+        assert_eq!(op.status, OpStatus::Undone, "{:?}", op);
+        assert!(hkcu().open_subkey(key).is_err(), "cheia creată trebuia să dispară");
         let _ = std::fs::remove_dir_all(&root);
     }
 

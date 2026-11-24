@@ -85,6 +85,7 @@
   "common.undoHint": "Se poate anula din „Jurnal și anulare”.",
 
   "status.in_progress": "în curs",
+  "status.interrupted": "întreruptă (ex. repornire): poate fi readusă",
   "status.applied": "aplicată",
   "status.rolled_back": "eșuată, readusă automat",
   "status.undone": "anulată",

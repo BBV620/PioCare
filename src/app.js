@@ -190,9 +190,11 @@ async function loadOverview() {
 const setStatus = statusBox("status");
 
 function opCard(op) {
-  const label = statusLabel(op.status);
   const cls = statusClass[op.status] || "";
-  const canUndo = op.kind === "change" && (op.status === "applied" || op.status === "partially_undone");
+  // „În curs” de peste 5 minute = întreruptă (ex. repornire în timpul aplicării): se poate readuce.
+  const interrupted = op.status === "in_progress" && Date.now() / 1000 - op.created > 300;
+  const canUndo = op.kind === "change" && (op.status === "applied" || op.status === "partially_undone" || interrupted);
+  const label = interrupted ? t("status.interrupted") : statusLabel(op.status);
   const steps = op.step_texts
     .map((s) => `<li><span class="st ${s.state}">${esc(t(`step.${s.state}`))}</span> ${esc(s.text)}${s.error ? `<div class="err">${esc(s.error)}</div>` : ""}</li>`)
     .join("");
