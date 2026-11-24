@@ -95,7 +95,7 @@ PioCare/
 | 0.1 | Schelet: dashboard care doar citește (versiune Windows, spațiu liber, programe instalate, pachet de reguli). |
 | 0.2 ✓ | Jurnal + copii de siguranță + anulare (fundația pentru orice schimbare). Vezi mai jos. |
 | 0.3 ✓ | Registru curat: dezinstalări orfane, porniri automate moarte, App Paths, SharedDLLs; ștergere prin jurnal. Testat în VM: scanare → curățare → anulare. |
-| 0.4 | Servicii: graf de dependențe, profiluri, oprire/pornire cu anulare. |
+| 0.4 ✓ | Servicii: hartă cu dependențe în ambele sensuri, profiluri Acasă/Birou/Gaming, „ce folosești”, oprire doar fără dependenți activi, listă de servicii vitale neatinse. Testat în VM: aplicare 31 schimbări → anulare. |
 | 0.5 | Firewall: politică de siguranță, export/import, monitorizare programe noi. |
 | 0.6 | Întreținere generală și curățare. |
 | 0.7 | Pachete de reguli semnate și actualizare separată. |

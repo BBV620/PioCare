@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "2026.11.24",
+  "version": "2026.11.24.1",
   "kind": "services",
   "description": "Servicii Windows care pot fi trecute pe manual sau oprite fără să afecteze utilizarea obișnuită a PC-ului. Nimic nu se aplică fără confirmare.",
   "features": {
@@ -41,8 +41,8 @@
     { "id": "svc.btag", "service": "BTAGService", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "birou", "gaming"], "needed_for": ["bluetooth"], "why": "Audio Bluetooth pentru căști cu microfon." },
     { "id": "svc.bthavctp", "service": "BthAvctpSvc", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "birou", "gaming"], "needed_for": ["bluetooth"], "why": "Control redare pentru căști Bluetooth." },
     { "id": "svc.termservice", "service": "TermService", "proposal": "disabled", "risk": "medium", "profiles": ["acasa", "gaming"], "needed_for": ["desktop_distanta"], "why": "Desktop la distanță: permite conectarea la acest PC din rețea. Oprit, închide o poartă de atac." },
-    { "id": "svc.umrdp", "service": "UmRdpService", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "gaming"], "needed_for": ["desktop_distanta"], "why": "Redirecționare imprimante/discuri pentru Desktop la distanță." },
-    { "id": "svc.sessionenv", "service": "SessionEnv", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "gaming"], "needed_for": ["desktop_distanta"], "why": "Configurare sesiuni Desktop la distanță." },
+    { "id": "svc.umrdp", "service": "UmRdpService", "proposal": "disabled", "risk": "medium", "profiles": ["acasa", "gaming"], "needed_for": ["desktop_distanta"], "why": "Redirecționare imprimante/discuri pentru Desktop la distanță (folosit și de fereastra extinsă a mașinilor virtuale Hyper-V)." },
+    { "id": "svc.sessionenv", "service": "SessionEnv", "proposal": "disabled", "risk": "medium", "profiles": ["acasa", "gaming"], "needed_for": ["desktop_distanta"], "why": "Configurare sesiuni Desktop la distanță." },
     { "id": "svc.scardsvr", "service": "SCardSvr", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "gaming"], "needed_for": ["smart_card"], "why": "Cititor de card inteligent." },
     { "id": "svc.scdevenum", "service": "ScDeviceEnum", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "gaming"], "needed_for": ["smart_card"], "why": "Enumerare dispozitive smart card." },
     { "id": "svc.scpolicy", "service": "SCPolicySvc", "proposal": "disabled", "risk": "low", "profiles": ["acasa", "gaming"], "needed_for": ["smart_card"], "why": "Politică de scoatere a cardului inteligent." },
