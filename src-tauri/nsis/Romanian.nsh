@@ -1,4 +1,4 @@
-﻿LangString addOrReinstall ${LANG_ROMANIAN} "Adaugă/Reinstalează componente"
+LangString addOrReinstall ${LANG_ROMANIAN} "Adaugă/Reinstalează componente"
 LangString alreadyInstalled ${LANG_ROMANIAN} "Deja instalat"
 LangString alreadyInstalledLong ${LANG_ROMANIAN} "${PRODUCTNAME} ${VERSION} este deja instalat. Alege operația dorită și apasă Înainte pentru a continua."
 LangString appRunning ${LANG_ROMANIAN} "{{product_name}} rulează! Închide-l mai întâi, apoi încearcă din nou."
