@@ -280,8 +280,8 @@ pub fn scan() -> Result<ScanResult, String> {
     // 3. App Paths moarte.
     if on("app_paths_missing") {
         let sources = [
+            // Fără WOW6432Node: App Paths e o cheie comună 64/32 biți (aceleași intrări), ar apărea dublat.
             (Root::HKLM, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths"),
-            (Root::HKLM, "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\App Paths"),
             (Root::HKCU, "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths"),
         ];
         for (root, base) in sources {
