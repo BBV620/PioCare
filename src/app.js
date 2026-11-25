@@ -110,13 +110,20 @@ function statusBox(id) {
 
 // ---------- limbă ----------
 function fillLangSelect() {
-  $("lang-select").innerHTML = LANGS.map((l) => `<option value="${l}" ${l === LANG ? "selected" : ""}>${esc(window.PIOCARE_LANGS[l]["lang.name"])}</option>`).join("");
+  $("lang-select").innerHTML = LANGS.map((l) =>
+    `<button type="button" data-lang="${l}" class="${l === LANG ? "on" : ""}" aria-pressed="${l === LANG}" title="${esc(window.PIOCARE_LANGS[l]["lang.name"])}">${window.PIOCARE_FLAG(l)}<span>${esc(window.PIOCARE_LANGS[l]["lang.name"])}</span></button>`).join("");
+  document.querySelectorAll("#lang-pick button[data-lang]").forEach((b) => {
+    if (!b.querySelector("svg.flag")) b.insertAdjacentHTML("afterbegin", window.PIOCARE_FLAG(b.dataset.lang, "flag big"));
+  });
 }
 async function chooseLanguage(lang) {
   if (rawInvoke) await invoke("set_language", { lang });
   location.reload(); // reîncarcă toate textele, inclusiv cele venite din motor
 }
-$("lang-select").addEventListener("change", (e) => chooseLanguage(e.target.value));
+$("lang-select").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-lang]");
+  if (b && b.dataset.lang !== LANG) chooseLanguage(b.dataset.lang);
+});
 document.querySelectorAll("#lang-pick button[data-lang]").forEach((b) => b.addEventListener("click", () => chooseLanguage(b.dataset.lang)));
 
 // ---------- „Ce este?” ----------

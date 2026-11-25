@@ -26,6 +26,25 @@
     P[name]
       ? `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[name]}"/></svg>`
       : "";
+  // Steaguri desenate local (emoji-urile de steag nu se afișează pe Windows).
+  let flagId = 0;
+  const FLAGS = {
+    ro: () => '<rect width="1" height="2" fill="#002B7F"/><rect x="1" width="1" height="2" fill="#FCD116"/><rect x="2" width="1" height="2" fill="#CE1126"/>',
+    en: () => {
+      const id = "fl" + ++flagId;
+      return `<g transform="scale(.05)"><clipPath id="${id}"><path d="M30,15h30v15zv15h-30zh-30v-15zv-15h30z"/></clipPath>` +
+        '<path d="M0,0v30h60v-30z" fill="#012169"/>' +
+        '<path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/>' +
+        `<path d="M0,0L60,30M60,0L0,30" clip-path="url(#${id})" stroke="#C8102E" stroke-width="4"/>` +
+        '<path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/>' +
+        '<path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></g>';
+    },
+  };
+  const FLAG_VIEW = { ro: "0 0 3 2", en: "0 0 3 1.5" };
+  window.PIOCARE_FLAG = (lang, cls = "flag") =>
+    FLAGS[lang]
+      ? `<svg class="${cls}" viewBox="${FLAG_VIEW[lang]}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${FLAGS[lang]()}</svg>`
+      : "";
   window.applyIcons = () =>
     document.querySelectorAll("[data-icon]").forEach((el) => {
       if (el.querySelector(":scope > svg.ico")) return;

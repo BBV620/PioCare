@@ -13,8 +13,8 @@
       <div class="brand dark"><span class="logo">P</span> PioCare</div>
       <h2 id="lang-pick-title">Alege limba · Choose your language</h2>
       <div class="lang-buttons">
-        <button data-lang="ro">Română</button>
-        <button data-lang="en">English</button>
+        <button data-lang="ro"><span>Română</span></button>
+        <button data-lang="en"><span>English</span></button>
       </div>
       <p class="sub" id="lang-pick-sub">Poți schimba oricând din meniu. · You can change it any time from the menu.</p>
     </div>
@@ -45,7 +45,7 @@
       <a href="#ajutor" data-page="ajutor" data-icon="help"><span data-i18n="nav.ajutor"></span></a>
     </nav>
     <div class="side-bottom">
-      <select id="lang-select" aria-label="Language"></select>
+      <div id="lang-select" class="lang-switch" role="group" aria-label="Limba · Language"></div>
       <select id="theme-select" aria-label="Theme">
         <option value="auto" data-i18n="theme.auto"></option>
         <option value="light" data-i18n="theme.light"></option>
