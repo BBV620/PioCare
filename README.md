@@ -24,12 +24,12 @@ Program **gratuit** de întreținere și siguranță pentru Windows 10 și 11. R
 
 ## Instalare
 
-1. Descarcă `PioCare_1.1.0_x64-setup.exe` din [Releases](../../releases).
+1. Descarcă `PioCare_1.1.1_x64-setup.exe` din [Releases](../../releases).
 2. Instalatorul nu are (încă) o semnătură comercială de cod, așa că Windows SmartScreen poate afișa „Windows a protejat PC-ul”: apasă **Mai multe informații** → **Rulare oricum**.
 3. Verifică, dacă vrei, că fișierul e cel original, în PowerShell:
 
    ```powershell
-   Get-FileHash .\PioCare_1.1.0_x64-setup.exe -Algorithm SHA256
+   Get-FileHash .\PioCare_1.1.1_x64-setup.exe -Algorithm SHA256
    ```
 
    Rezultatul trebuie să fie identic cu codul SHA-256 publicat la versiunea respectivă din Releases.
@@ -70,7 +70,7 @@ Gratuit. © Piogrup. Vezi [LICENSE](LICENSE).
 
 **Safety first:** the previous state is saved before every change (registry, services, full firewall export, restore point when possible), every change is listed in *Journal & undo* and can be reverted, leftover folders are quarantined rather than deleted, only official Windows APIs are used, nothing is sent over the internet, and the knowledge lives in **digitally signed** rule packs that update without reinstalling.
 
-**Install:** download `PioCare_1.1.0_x64-setup.exe` from [Releases](../../releases). The installer has no commercial code signature yet, so SmartScreen may say “Windows protected your PC”: click **More info** → **Run anyway**. Check the file with `Get-FileHash .\PioCare_1.1.0_x64-setup.exe -Algorithm SHA256` against the SHA-256 published with the release. The full manual is in the app under **Help**.
+**Install:** download `PioCare_1.1.1_x64-setup.exe` from [Releases](../../releases). The installer has no commercial code signature yet, so SmartScreen may say “Windows protected your PC”: click **More info** → **Run anyway**. Check the file with `Get-FileHash .\PioCare_1.1.1_x64-setup.exe -Algorithm SHA256` against the SHA-256 published with the release. The full manual is in the app under **Help**.
 
 **How it was built:** the idea, requirements, decisions and testing on real PCs come from **Piogrup**. The architecture, code (Rust and UI), rule packs, translations and automated tests were written by **Claude** (Anthropic) via Claude Code, working together with Piogrup. Every commit written by Claude carries `Co-Authored-By: Claude` in the repository history. PioCare is a Piogrup product; it is not published, endorsed or warranted by Anthropic.
 
