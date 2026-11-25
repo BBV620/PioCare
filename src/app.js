@@ -1,6 +1,66 @@
 // PioCare — interfața. Textele vin din i18n/<limbă>.js; aici nu se scrie text vizibil direct.
-const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
+const rawInvoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
 const $ = (id) => document.getElementById(id);
+
+// ---------- indicator de activitate ----------
+// Orice comandă care durează peste 0,3 s afișează sus bara de activitate: cerc care se învârte, ce se face,
+// secundele scurse și, la schimbările prin jurnal, procentul real (pași făcuți / total).
+const QUIET = new Set(["monitor_sample", "op_progress", "get_language", "set_language", "is_admin", "protection_status", "program_exists", "explain", "ip_info", "search_web", "ip_web", "open_folder", "open_rules_folder"]);
+const busy = { jobs: new Map(), seq: 0, timer: null, started: 0 };
+
+function renderBusy() {
+  const el = $("busy");
+  if (!el) return;
+  if (!busy.jobs.size) {
+    el.classList.add("hidden");
+    clearInterval(busy.timer);
+    busy.timer = null;
+    return;
+  }
+  const cmd = [...busy.jobs.values()].pop();
+  const key = `busy.${cmd}`;
+  $("busy-text").textContent = typeof t === "function" && t(key) !== key ? t(key) : typeof t === "function" ? t("busy.default") : "…";
+  $("busy-time").textContent = `${Math.floor((Date.now() - busy.started) / 1000)} s`;
+  el.classList.remove("hidden");
+}
+
+async function pollProgress() {
+  renderBusy();
+  try {
+    const p = rawInvoke ? await rawInvoke("op_progress") : null;
+    const fill = $("busy-fill");
+    if (p && p.total > 0) {
+      const pct = Math.round((p.done / p.total) * 100);
+      fill.classList.remove("indet");
+      fill.style.width = `${Math.max(pct, 3)}%`;
+      $("busy-pct").textContent = `${pct}% · ${p.done}/${p.total}`;
+    } else {
+      fill.classList.add("indet");
+      fill.style.width = "";
+      $("busy-pct").textContent = "";
+    }
+  } catch {}
+}
+
+function invoke(cmd, args) {
+  if (!rawInvoke) return Promise.reject("no tauri");
+  const p = rawInvoke(cmd, args);
+  if (QUIET.has(cmd)) return p;
+  const id = ++busy.seq;
+  const show = setTimeout(() => {
+    if (!busy.jobs.size) busy.started = Date.now() - 300;
+    busy.jobs.set(id, cmd);
+    if (!busy.timer) busy.timer = setInterval(pollProgress, 800);
+    pollProgress();
+  }, 300);
+  const done = () => {
+    clearTimeout(show);
+    busy.jobs.delete(id);
+    renderBusy();
+  };
+  p.then(done, done);
+  return p;
+}
 const LANGS = ["ro", "en"];
 let LANG = "ro";
 
@@ -53,7 +113,7 @@ function fillLangSelect() {
   $("lang-select").innerHTML = LANGS.map((l) => `<option value="${l}" ${l === LANG ? "selected" : ""}>${esc(window.PIOCARE_LANGS[l]["lang.name"])}</option>`).join("");
 }
 async function chooseLanguage(lang) {
-  if (invoke) await invoke("set_language", { lang });
+  if (rawInvoke) await invoke("set_language", { lang });
   location.reload(); // reîncarcă toate textele, inclusiv cele venite din motor
 }
 $("lang-select").addEventListener("change", (e) => chooseLanguage(e.target.value));
@@ -146,7 +206,7 @@ function uptimeText(h) {
 }
 
 async function loadOverview() {
-  if (!invoke) {
+  if (!rawInvoke) {
     $("win").textContent = t("common.outside");
     return;
   }
@@ -230,7 +290,7 @@ function opCard(op) {
 }
 
 async function loadJournal() {
-  if (!invoke) return;
+  if (!rawInvoke) return;
   try {
     const ops = await invoke("journal_list");
     // Protecția sistemului: starea directă (cu administrator) sau dedusă din ultimul punct de restaurare încercat.
@@ -696,7 +756,7 @@ function drawChart() {
 }
 
 async function tickMonitor() {
-  if (monBusy || !invoke) return;
+  if (monBusy || !rawInvoke) return;
   monBusy = true;
   try {
     const by = document.querySelector("input[name=monsort]:checked").value;
@@ -1073,20 +1133,31 @@ $("refresh").addEventListener("click", loadOverview);
 // ---------- pornire ----------
 (async function start() {
   let info = { lang: null, suggestion: "ro" };
-  if (invoke) {
+  if (rawInvoke) {
     try {
       info = await invoke("get_language");
     } catch {}
   }
   LANG = LANGS.includes(info.lang) ? info.lang : LANGS.includes(info.suggestion) ? info.suggestion : "ro";
+  if (window.applyIcons) window.applyIcons();
   applyTexts();
   fillLangSelect();
+  // Tema aleasă (preferință locală a utilizatorului).
+  const theme = store.get("piocare.theme", "auto");
+  $("theme-select").value = theme;
+  if (theme !== "auto") document.documentElement.dataset.theme = theme;
+  $("theme-select").addEventListener("change", (e) => {
+    const v = e.target.value;
+    store.set("piocare.theme", v);
+    if (v === "auto") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = v;
+  });
   try {
     const v = await window.__TAURI__.app.getVersion();
     $("brand-ver").textContent = v;
     document.title = `PioCare ${v}`;
   } catch {}
-  if (invoke && !info.lang) {
+  if (rawInvoke && !info.lang) {
     // Prima pornire: întrebăm limba; butonul sugerat (limba Windows) e primul în focus.
     $("lang-pick").classList.remove("hidden");
     document.querySelector(`#lang-pick button[data-lang="${LANG}"]`)?.focus();

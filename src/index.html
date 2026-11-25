@@ -32,47 +32,57 @@
   <aside class="side">
     <div class="brand"><span class="logo">P</span> PioCare <span class="ver" id="brand-ver"></span></div>
     <nav>
-      <a class="active" href="#panou" data-page="panou" data-i18n="nav.panou"></a>
-      <a href="#monitor" data-page="monitor" data-i18n="nav.monitor"></a>
-      <a href="#intretinere" data-page="intretinere" data-i18n="nav.intretinere"></a>
-      <a href="#pornire" data-page="pornire" data-i18n="nav.pornire"></a>
-      <a href="#sarcini" data-page="sarcini" data-i18n="nav.sarcini"></a>
-      <a href="#programe" data-page="programe" data-i18n="nav.programe"></a>
-      <a href="#registru" data-page="registru" data-i18n="nav.registru"></a>
-      <a href="#servicii" data-page="servicii" data-i18n="nav.servicii"></a>
-      <a href="#firewall" data-page="firewall" data-i18n="nav.firewall"></a>
-      <a href="#jurnal" data-page="jurnal" data-i18n="nav.jurnal"></a>
-      <a href="#ajutor" data-page="ajutor" data-i18n="nav.ajutor"></a>
+      <a class="active" href="#panou" data-page="panou" data-icon="home"><span data-i18n="nav.panou"></span></a>
+      <a href="#monitor" data-page="monitor" data-icon="activity"><span data-i18n="nav.monitor"></span></a>
+      <a href="#intretinere" data-page="intretinere" data-icon="sparkles"><span data-i18n="nav.intretinere"></span></a>
+      <a href="#pornire" data-page="pornire" data-icon="power"><span data-i18n="nav.pornire"></span></a>
+      <a href="#sarcini" data-page="sarcini" data-icon="calendar"><span data-i18n="nav.sarcini"></span></a>
+      <a href="#programe" data-page="programe" data-icon="trash"><span data-i18n="nav.programe"></span></a>
+      <a href="#registru" data-page="registru" data-icon="database"><span data-i18n="nav.registru"></span></a>
+      <a href="#servicii" data-page="servicii" data-icon="cog"><span data-i18n="nav.servicii"></span></a>
+      <a href="#firewall" data-page="firewall" data-icon="shield"><span data-i18n="nav.firewall"></span></a>
+      <a href="#jurnal" data-page="jurnal" data-icon="history"><span data-i18n="nav.jurnal"></span></a>
+      <a href="#ajutor" data-page="ajutor" data-icon="help"><span data-i18n="nav.ajutor"></span></a>
     </nav>
     <div class="side-bottom">
       <select id="lang-select" aria-label="Language"></select>
+      <select id="theme-select" aria-label="Theme">
+        <option value="auto" data-i18n="theme.auto"></option>
+        <option value="light" data-i18n="theme.light"></option>
+        <option value="dark" data-i18n="theme.dark"></option>
+      </select>
       <div class="mode" id="mode"></div>
     </div>
   </aside>
 
   <main>
+    <!-- Indicator de activitate: apare cât timp PioCare lucrează -->
+    <div id="busy" class="busy hidden" role="status" aria-live="polite">
+      <div class="busy-bar"><div id="busy-fill" class="indet"></div></div>
+      <div class="busy-row"><span class="spinner"></span><span id="busy-text"></span><span id="busy-pct"></span><span id="busy-time"></span></div>
+    </div>
     <div class="page" id="page-panou">
       <header>
-        <h1 data-i18n="panou.title"></h1>
+        <h1 data-icon="home"><span data-i18n="panou.title"></span></h1>
         <button id="refresh" data-i18n="common.refresh"></button>
       </header>
 
       <section class="cards">
-        <div class="card"><h3>Windows</h3><p class="big" id="win">…</p><p class="sub" id="winver"></p></div>
-        <div class="card"><h3 data-i18n="panou.disk"></h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
-        <div class="card"><h3 data-i18n="panou.apps"></h3><p class="big" id="apps">…</p><p class="sub" data-i18n="panou.appsSub"></p></div>
-        <div class="card"><h3 data-i18n="panou.uptime"></h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
-        <div class="card"><h3 data-i18n="panou.rules"></h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
-        <div class="card"><h3 data-i18n="panou.lastBackup"></h3><p class="big" id="lastbackup">…</p><p class="sub" id="lastbackupsub"></p></div>
+        <div class="card"><h3 data-icon="monitor">Windows</h3><p class="big" id="win">…</p><p class="sub" id="winver"></p></div>
+        <div class="card"><h3 data-icon="drive"><span data-i18n="panou.disk"></span></h3><p class="big" id="disk">…</p><div class="bar"><div id="diskbar"></div></div><p class="sub" id="disksub"></p></div>
+        <div class="card"><h3 data-icon="grid"><span data-i18n="panou.apps"></span></h3><p class="big" id="apps">…</p><p class="sub" data-i18n="panou.appsSub"></p></div>
+        <div class="card"><h3 data-icon="clock"><span data-i18n="panou.uptime"></span></h3><p class="big" id="uptime">…</p><p class="sub" id="pc"></p></div>
+        <div class="card"><h3 data-icon="book"><span data-i18n="panou.rules"></span></h3><p class="big" id="rules">…</p><p class="sub" id="rulessub"></p></div>
+        <div class="card"><h3 data-icon="archive"><span data-i18n="panou.lastBackup"></span></h3><p class="big" id="lastbackup">…</p><p class="sub" id="lastbackupsub"></p></div>
       </section>
 
       <section class="modules">
         <h2 data-i18n="panou.modules"></h2>
         <div class="grid">
-          <div class="mod"><b data-i18n="panou.mod.mt"></b><span data-i18n="panou.mod.mt.sub"></span></div>
-          <div class="mod"><b data-i18n="panou.mod.reg"></b><span data-i18n="panou.mod.reg.sub"></span></div>
-          <div class="mod"><b data-i18n="panou.mod.svc"></b><span data-i18n="panou.mod.svc.sub"></span></div>
-          <div class="mod"><b data-i18n="panou.mod.fw"></b><span data-i18n="panou.mod.fw.sub"></span></div>
+          <div class="mod"><b data-icon="sparkles"><span data-i18n="panou.mod.mt"></span></b><span data-i18n="panou.mod.mt.sub"></span></div>
+          <div class="mod"><b data-icon="database"><span data-i18n="panou.mod.reg"></span></b><span data-i18n="panou.mod.reg.sub"></span></div>
+          <div class="mod"><b data-icon="cog"><span data-i18n="panou.mod.svc"></span></b><span data-i18n="panou.mod.svc.sub"></span></div>
+          <div class="mod"><b data-icon="shield"><span data-i18n="panou.mod.fw"></span></b><span data-i18n="panou.mod.fw.sub"></span></div>
         </div>
         <p class="note" data-i18n="panou.note"></p>
       </section>
@@ -87,14 +97,14 @@
 
     <div class="page hidden" id="page-monitor">
       <header>
-        <h1 data-i18n="mon.title"></h1>
+        <h1 data-icon="activity"><span data-i18n="mon.title"></span></h1>
         <span class="sub" id="mon-cpuname"></span>
       </header>
       <section class="gauges">
-        <div class="card gauge"><h3 data-i18n="mon.cpu"></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-cpu"/><text x="60" y="58" class="ring-val" id="val-cpu">–</text><text x="60" y="78" class="ring-sub" id="sub-cpu"></text></svg></div>
-        <div class="card gauge"><h3 data-i18n="mon.ram"></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-ram"/><text x="60" y="58" class="ring-val" id="val-ram">–</text><text x="60" y="78" class="ring-sub" id="sub-ram"></text></svg></div>
-        <div class="card gauge"><h3 data-i18n="mon.gpu"></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-gpu"/><text x="60" y="58" class="ring-val" id="val-gpu">–</text><text x="60" y="78" class="ring-sub" id="sub-gpu"></text></svg><p class="sub" id="gpu-note"></p></div>
-        <div class="card gauge"><h3 data-i18n="mon.procs"></h3><p class="big" id="val-procs">–</p><p class="sub" id="sub-swap"></p><p class="sub" data-i18n="mon.tempNote"></p></div>
+        <div class="card gauge"><h3 data-icon="cpu"><span data-i18n="mon.cpu"></span></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-cpu"/><text x="60" y="58" class="ring-val" id="val-cpu">–</text><text x="60" y="78" class="ring-sub" id="sub-cpu"></text></svg></div>
+        <div class="card gauge"><h3 data-icon="activity"><span data-i18n="mon.ram"></span></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-ram"/><text x="60" y="58" class="ring-val" id="val-ram">–</text><text x="60" y="78" class="ring-sub" id="sub-ram"></text></svg></div>
+        <div class="card gauge"><h3 data-icon="monitor"><span data-i18n="mon.gpu"></span></h3><svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="50" class="ring-bg"/><circle cx="60" cy="60" r="50" class="ring-fg" id="ring-gpu"/><text x="60" y="58" class="ring-val" id="val-gpu">–</text><text x="60" y="78" class="ring-sub" id="sub-gpu"></text></svg><p class="sub" id="gpu-note"></p></div>
+        <div class="card gauge"><h3 data-icon="grid"><span data-i18n="mon.procs"></span></h3><p class="big" id="val-procs">–</p><p class="sub" id="sub-swap"></p><p class="sub" data-i18n="mon.tempNote"></p></div>
       </section>
       <div class="card chart"><div class="legend-row"><span class="dot cpu"></span><span data-i18n="mon.cpu"></span><span class="dot ram"></span><span data-i18n="mon.ram"></span><span class="sub" data-i18n="mon.lastMin"></span></div>
         <svg viewBox="0 0 600 140" preserveAspectRatio="none" id="mon-chart"><polyline id="line-cpu" class="line cpu"/><polyline id="line-ram" class="line ram"/></svg></div>
@@ -109,7 +119,7 @@
 
     <div class="page hidden" id="page-intretinere">
       <header>
-        <h1 data-i18n="mt.title"></h1>
+        <h1 data-icon="sparkles"><span data-i18n="mt.title"></span></h1>
         <div class="actions">
           <button class="ghost" id="btn-mt-scan" data-i18n="common.scan"></button>
           <button id="btn-mt-clean" disabled data-i18n="common.clean"></button>
@@ -122,7 +132,7 @@
 
     <div class="page hidden" id="page-pornire">
       <header>
-        <h1 data-i18n="st.title"></h1>
+        <h1 data-icon="power"><span data-i18n="st.title"></span></h1>
         <div class="actions"><button class="ghost" id="btn-st-refresh" data-i18n="common.refresh"></button></div>
       </header>
       <p class="lead" data-i18n="st.lead"></p>
@@ -132,7 +142,7 @@
 
     <div class="page hidden" id="page-sarcini">
       <header>
-        <h1 data-i18n="tk.title"></h1>
+        <h1 data-icon="calendar"><span data-i18n="tk.title"></span></h1>
         <div class="actions"><button class="ghost" id="btn-tk-refresh" data-i18n="common.refresh"></button></div>
       </header>
       <p class="lead" data-i18n="tk.lead"></p>
@@ -142,7 +152,7 @@
 
     <div class="page hidden" id="page-programe">
       <header>
-        <h1 data-i18n="un.title"></h1>
+        <h1 data-icon="trash"><span data-i18n="un.title"></span></h1>
         <div class="actions"><button class="ghost" id="btn-un-refresh" data-i18n="common.refresh"></button></div>
       </header>
       <p class="lead" data-i18n="un.lead"></p>
@@ -170,7 +180,7 @@
 
     <div class="page hidden" id="page-registru">
       <header>
-        <h1 data-i18n="reg.title"></h1>
+        <h1 data-icon="database"><span data-i18n="reg.title"></span></h1>
         <div class="actions">
           <button class="ghost" id="btn-scan" data-i18n="common.scan"></button>
           <button id="btn-clean" disabled data-i18n="common.clean"></button>
@@ -183,7 +193,7 @@
 
     <div class="page hidden" id="page-servicii">
       <header>
-        <h1 data-i18n="svc.title"></h1>
+        <h1 data-icon="cog"><span data-i18n="svc.title"></span></h1>
         <div class="actions">
           <button id="btn-svc-apply" disabled data-i18n="common.apply"></button>
         </div>
@@ -212,7 +222,7 @@
 
     <div class="page hidden" id="page-firewall">
       <header>
-        <h1 data-i18n="fw.title"></h1>
+        <h1 data-icon="shield"><span data-i18n="fw.title"></span></h1>
         <div class="actions">
           <button id="btn-fw-apply" disabled data-i18n="common.apply"></button>
         </div>
@@ -235,14 +245,14 @@
     </div>
 
     <div class="page hidden" id="page-ajutor">
-      <header><h1 data-i18n="help.title"></h1></header>
+      <header><h1 data-icon="help"><span data-i18n="help.title"></span></h1></header>
       <div class="op help" id="help-body"></div>
       <p class="sub" id="about"></p>
     </div>
 
     <div class="page hidden" id="page-jurnal">
       <header>
-        <h1 data-i18n="j.title"></h1>
+        <h1 data-icon="history"><span data-i18n="j.title"></span></h1>
         <div class="actions">
           <button id="btn-backup" data-i18n="j.backup" data-i18n-title="j.backup.tip"></button>
         </div>
@@ -263,6 +273,7 @@
     </div>
   </main>
 
+  <script src="icons.js"></script>
   <script src="i18n/ro.js"></script>
   <script src="i18n/en.js"></script>
   <script src="i18n/help-ro.js"></script>

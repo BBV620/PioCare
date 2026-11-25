@@ -175,6 +175,30 @@ fn firewall_block_program(path: String) -> Result<OpView, String> {
     engine::run(&root, Request::Apply { plan }).map(|o| view(&root, o))
 }
 
+#[derive(serde::Serialize)]
+struct Progress {
+    title: String,
+    done: usize,
+    total: usize,
+}
+
+/// Progresul operației în curs (citit din jurnal, pe care motorul îl rescrie după fiecare pas).
+#[tauri::command]
+fn op_progress() -> Option<Progress> {
+    let root = journal::default_root().ok()?;
+    let newest = std::fs::read_dir(&root)
+        .ok()?
+        .flatten()
+        .filter(|e| e.path().is_dir() && !e.file_name().to_string_lossy().starts_with('.'))
+        .max_by_key(|e| e.file_name())?;
+    let op = journal::load(&root, &newest.file_name().to_string_lossy()).ok()?;
+    if op.status != journal::OpStatus::InProgress || journal::now().saturating_sub(op.created) > 900 {
+        return None;
+    }
+    let done = op.steps.iter().filter(|s| s.state != journal::StepState::Pending).count();
+    Some(Progress { title: op.title, done, total: op.steps.len() })
+}
+
 /// Punctele de restaurare și spațiul lor (cere administrator: o fereastră UAC, doar citire).
 #[tauri::command(async)]
 fn restore_points() -> Result<sys::RestoreInfo, String> {
@@ -501,6 +525,7 @@ pub fn run() {
             search_web,
             ip_info,
             ip_web,
+            op_progress,
             restore_points,
             restore_limit,
             monitor_sample,
